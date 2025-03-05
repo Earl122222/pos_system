@@ -73,7 +73,19 @@
                     sidebarToggle.addEventListener('click', (e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        
+                        // Toggle collapsed class
                         sidebar.classList.toggle('collapsed');
+                        
+                        // Only close submenus, keep active states
+                        document.querySelectorAll('.submenu').forEach(submenu => {
+                            submenu.classList.remove('active');
+                        });
+                        
+                        // Reset dropdown indicators
+                        document.querySelectorAll('.dropdown-indicator').forEach(indicator => {
+                            indicator.style.transform = 'translateY(-50%) rotate(0deg)';
+                        });
                     });
                 }
                 
@@ -81,12 +93,164 @@
                 const currentPath = window.location.pathname;
                 const menuLinks = document.querySelectorAll('.menu-link');
                 menuLinks.forEach(link => {
-                    if (link.getAttribute('href') === currentPath.split('/').pop()) {
+                    const href = link.getAttribute('href');
+                    if (href && currentPath.endsWith(href)) {
                         link.classList.add('active');
+                        // If this is a submenu item, also activate its parent
+                        const submenuWrapper = link.closest('.submenu-wrapper');
+                        if (submenuWrapper) {
+                            const parentLink = submenuWrapper.querySelector('.menu-link');
+                            if (parentLink) {
+                                parentLink.classList.add('active');
+                                submenuWrapper.querySelector('.submenu').classList.add('active');
+                            }
+                        }
                     }
                 });
             };
         </script>
+        <style>
+            /* Dropdown indicator adjustments */
+            .menu-link {
+                position: relative;
+                display: flex;
+                align-items: center;
+                padding-right: 35px !important;
+            }
+
+            .menu-link .dropdown-indicator {
+                position: absolute;
+                right: 15px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 10px;
+                color: rgba(255, 255, 255, 0.7);
+                transition: all 0.3s ease;
+            }
+
+            .menu-link:hover .dropdown-indicator {
+                color: rgba(255, 255, 255, 0.9);
+            }
+
+            .menu-link.active .dropdown-indicator {
+                color: #ffffff;
+                transform: translateY(-50%) rotate(180deg);
+            }
+
+            .menu-link i:not(.dropdown-indicator) {
+                width: 20px;
+                margin-right: 12px;
+                text-align: center;
+            }
+
+            .menu-link span {
+                flex: 1;
+            }
+
+            /* Hide dropdown icon when sidebar is collapsed */
+            .app-sidebar.collapsed .dropdown-indicator {
+                display: none;
+            }
+
+            /* Adjust padding when sidebar is collapsed */
+            .app-sidebar.collapsed .menu-link {
+                padding-right: 12px !important;
+                justify-content: center;
+            }
+
+            .app-sidebar.collapsed .menu-link i:not(.dropdown-indicator) {
+                margin-right: 0;
+            }
+
+            /* Submenu styles */
+            .submenu-wrapper {
+                position: relative;
+            }
+
+            .submenu {
+                position: static;
+                width: 100%;
+                background: rgba(0, 0, 0, 0.1);
+                list-style: none;
+                padding: 0;
+                margin: 0;
+                max-height: 0;
+                overflow: hidden;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease;
+            }
+
+            .submenu.active {
+                max-height: 1000px;
+                opacity: 1;
+                visibility: visible;
+                padding: 8px;
+            }
+
+            .submenu-link {
+                display: flex;
+                align-items: center;
+                padding: 10px 15px;
+                color: rgba(255, 255, 255, 0.7);
+                text-decoration: none;
+                border-radius: 6px;
+                transition: all 0.3s ease;
+                font-size: 0.9em;
+            }
+
+            .submenu-link i {
+                width: 20px;
+                margin-right: 10px;
+                font-size: 0.9em;
+            }
+
+            .submenu-link:hover {
+                color: #fff;
+                background: rgba(255, 255, 255, 0.1);
+                padding-left: 20px;
+            }
+
+            /* Rotate dropdown indicator when active */
+            .menu-link.active .dropdown-indicator {
+                transform: translateY(-50%) rotate(180deg);
+            }
+
+            /* Hide submenu when sidebar is collapsed */
+            .app-sidebar.collapsed .submenu {
+                display: none;
+            }
+
+            /* Add these new styles */
+            .menu-link.active {
+                background: rgba(255, 255, 255, 0.1);
+                color: #fff;
+                position: relative;
+            }
+
+            .menu-link.active::after {
+                content: '';
+                position: absolute;
+                left: 0;
+                bottom: 0;
+                width: 100%;
+                height: 2px;
+                background: #fff;
+            }
+
+            /* Adjust underline for collapsed state */
+            .app-sidebar.collapsed .menu-link.active::after {
+                width: 4px;
+                height: 100%;
+                top: 0;
+                bottom: auto;
+            }
+
+            /* Keep active state visible in collapsed mode */
+            .app-sidebar.collapsed .menu-link.active {
+                background: rgba(255, 255, 255, 0.1);
+            }
+        </style>
     </head>
     <body>
         <div class="app-container">
@@ -108,44 +272,58 @@
                                 <span>Dashboard</span>
                             </a>
                         </li>
-                        <?php if(isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'Admin'): ?>
-                        <li class="menu-item">
-                            <a href="category.php" class="menu-link">
-                                <i class="fas fa-th-list"></i>
-                                <span>Category</span>
-                            </a>
-                        </li>
-                        <li class="menu-item">
-                            <a href="user.php" class="menu-link">
-                                <i class="fas fa-users"></i>
-                                <span>User</span>
-                            </a>
-                        </li>
-                        <li class="menu-item">
-                            <a href="ingredients.php" class="menu-link">
-                                <i class="fas fa-mortar-pestle"></i>
-                                <span>Ingredients</span>
-                            </a>
-                        </li>
-                        <li class="menu-item">
-                            <a href="product.php" class="menu-link">
-                                <i class="fas fa-utensils"></i>
-                                <span>Product</span>
-                            </a>
-                        </li>
+                        <?php if(isset($_SESSION['user_type'])): ?>
+                            <?php if($_SESSION['user_type'] === 'Admin'): ?>
+                                <li class="menu-item">
+                                    <a href="category.php" class="menu-link">
+                                        <i class="fas fa-th-list"></i>
+                                        <span>Category</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <div class="submenu-wrapper">
+                                        <a href="#" class="menu-link" onclick="toggleSubmenu(event, this)">
+                                            <i class="fas fa-users"></i>
+                                            <span>User</span>
+                                            <i class="fas fa-chevron-down dropdown-indicator"></i>
+                                        </a>
+                                        <ul class="submenu">
+                                            <li><a href="user.php" class="submenu-link"><i class="fas fa-users-gear"></i>Manage Users</a></li>
+                                            <li><a href="add_user.php?role=cashier" class="submenu-link"><i class="fas fa-cash-register"></i>Add Cashier</a></li>
+                                            <li><a href="add_user.php?role=stockman" class="submenu-link"><i class="fas fa-boxes"></i>Add Stockman</a></li>
+                                            <li><a href="add_user.php?role=admin" class="submenu-link"><i class="fas fa-user-shield"></i>Add Admin</a></li>
+                                        </ul>
+                                    </div>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="ingredients.php" class="menu-link">
+                                        <i class="fas fa-mortar-pestle"></i>
+                                        <span>Ingredients</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="product.php" class="menu-link">
+                                        <i class="fas fa-utensils"></i>
+                                        <span>Product</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                            
+                            <?php if($_SESSION['user_type'] === 'Admin' || $_SESSION['user_type'] === 'Cashier'): ?>
+                                <li class="menu-item">
+                                    <a href="add_order.php" class="menu-link">
+                                        <i class="fas fa-cart-plus"></i>
+                                        <span>Create Order</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="order.php" class="menu-link">
+                                        <i class="fas fa-history"></i>
+                                        <span>Order History</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
                         <?php endif; ?>
-                        <li class="menu-item">
-                            <a href="add_order.php" class="menu-link">
-                                <i class="fas fa-cart-plus"></i>
-                                <span>Create Order</span>
-                            </a>
-                        </li>
-                        <li class="menu-item">
-                            <a href="order.php" class="menu-link">
-                                <i class="fas fa-history"></i>
-                                <span>Order History</span>
-                            </a>
-                        </li>
                     </ul>
                 </div>
             </aside>
@@ -249,4 +427,52 @@ function updateClock() {
 // Update clock and greeting immediately and then every second
 updateClock();
 setInterval(updateClock, 1000);
+</script>
+
+<script>
+    // Toggle submenu function
+    function toggleSubmenu(event, element) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const submenu = element.nextElementSibling;
+        const isMenuClick = event.target === element || event.target.parentElement === element;
+        
+        if (isMenuClick) {
+            // Toggle current submenu
+            element.classList.toggle('active');
+            submenu.classList.toggle('active');
+            
+            // Close other submenus
+            document.querySelectorAll('.submenu-wrapper').forEach(wrapper => {
+                if (wrapper !== element.parentElement) {
+                    wrapper.querySelector('.menu-link').classList.remove('active');
+                    wrapper.querySelector('.submenu').classList.remove('active');
+                }
+            });
+        }
+        
+        // Keep active states for current page
+        const currentPath = window.location.pathname;
+        submenu.querySelectorAll('.submenu-link').forEach(link => {
+            if (link.getAttribute('href') && currentPath.endsWith(link.getAttribute('href'))) {
+                link.classList.add('active');
+                element.classList.add('active');
+                submenu.classList.add('active');
+            }
+        });
+    }
+    
+    // Add this to window.onload
+    window.addEventListener('load', function() {
+        // Prevent document click from closing submenu
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.submenu-wrapper')) {
+                // Close all submenus when clicking outside
+                document.querySelectorAll('.menu-link, .submenu').forEach(el => {
+                    el.classList.remove('active');
+                });
+            }
+        });
+    });
 </script>

@@ -13,125 +13,223 @@ $confData = getConfigData($pdo);
 include('header.php');
 ?>
 
-<h1 class="mt-4">Order</h1>
-<ol class="breadcrumb mb-4">
-    <li class="breadcrumb-item"><a href="dashboard.php">Dashboard</a></li>
-    <li class="breadcrumb-item active">Order</li>
-</ol>
+<!-- Add the custom CSS file -->
+<link rel="stylesheet" href="asset/css/order-custom.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header"><b>Item</b></div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <button type="button" class="btn btn-primary mb-2" onclick="load_category_product()">All</button>
-                <?php foreach ($categorys as $category): ?>
-                    <button type="button" class="btn btn-primary mb-2" onclick="load_category_product('<?php echo $category['category_id']; ?>')"><?php echo $category['category_name']; ?></button>&nbsp;&nbsp;
-                <?php endforeach; ?>
-                </div>
-                <div class="row" id="dynamic_item">
-                    
-                </div>
+<div class="container-fluid px-4">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Categories Menu -->
+            <div class="category-menu">
+                <button type="button" class="category-btn active" onclick="load_category_product('all')">
+                    <i class="fas fa-utensils"></i>
+                    All Menu
+                    <small>4 items</small>
+                </button>
+                <button type="button" class="category-btn" onclick="load_category_product('coffee')">
+                    <i class="fas fa-coffee"></i>
+                    Coffee
+                    <small>2 items</small>
+                </button>
+                <button type="button" class="category-btn" onclick="load_category_product('tea')">
+                    <i class="fas fa-mug-hot"></i>
+                    Tea
+                    <small>3 items</small>
+                </button>
+                <button type="button" class="category-btn" onclick="load_category_product('mocktail')">
+                    <i class="fas fa-glass-martini-alt"></i>
+                    Mocktail
+                    <small>8 items</small>
+                </button>
+                <button type="button" class="category-btn" onclick="load_category_product('rice')">
+                    <i class="fas fa-bowl-rice"></i>
+                    Rice
+                    <small>4 items</small>
+                </button>
+                <button type="button" class="category-btn" onclick="load_category_product('pasta')">
+                    <i class="fas fa-wheat-awn"></i>
+                    Pasta
+                    <small>4 items</small>
+                </button>
+                <button type="button" class="category-btn" onclick="load_category_product('burger')">
+                    <i class="fas fa-hamburger"></i>
+                    Burger
+                    <small>6 items</small>
+                </button>
+            </div>
+
+            <!-- Menu Section Title -->
+            <h5 class="mb-3" id="menu-title">All Menu</h5>
+            <div class="row" id="dynamic_item">
+                <!-- Items will be loaded here -->
             </div>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <div class="row">
-                    <div class="col-md-6"><b>Order</b></div>
-                    <div class="col-md-6">
-                        <button type="button" class="btn btn-success btn-sm float-end" onclick="resetOrder()">New Order</button>
+
+        <div class="col-md-4">
+            <div class="card order-section">
+                <div class="order-header">
+                    <h5 class="order-title">Invoice</h5>
+                </div>
+                
+                <div class="service-types">
+                    <div class="service-type active" onclick="setServiceType('dine-in')">
+                        <i class="fas fa-utensils"></i>
+                        <span>Dine in</span>
+                    </div>
+                    <div class="service-type" onclick="setServiceType('takeout')">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>Takeout</span>
+                    </div>
+                    <div class="service-type" onclick="setServiceType('delivery')">
+                        <i class="fas fa-motorcycle"></i>
+                        <span>Delivery</span>
                     </div>
                 </div>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>Item Name</th>
-                                <th>Qty</th>
-                                <th>Unit Price</th>
-                                <th>Price</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody id="order_item_details">
 
-                        </tbody>
-                        <tfooter>
-                            <tr>
-                                <td colspan="3"><b>Gross Total</b></td>
-                                <td class="text-right"><b id="order_gross_total">0.00</b></td>
-                                <td>&nbsp;</td>
-                            </tr>
-                            <tr>
-                                <td colspan="3"><b>Taxes (<?php echo floatval($confData['tax_rate']); ?>%)</b></td>
-                                <td class="text-right"><b id="order_taxes">0.00</b></td>
-                                <td>&nbsp;</td>
-                            </tr>
-                            <tr>
-                                <td colspan="3"><b>Net Total</b></td>
-                                <td class="text-right"><b id="order_net_total">0.00</b></td>
-                                <td>&nbsp;</td>
-                            </tr>
-                        </tfooter>
-                    </table>
+                <div class="order-items" id="order_item_details">
+                    <!-- Order items will be loaded here -->
                 </div>
-            </div>
-            <div class="card-footer text-center">
-                <input type="button" class="btn btn-success" id="order_btn" value="Pay" onclick="createOrder()" disabled />
+
+                <div class="payment-summary">
+                    <div class="summary-row">
+                        <span>Sub Total</span>
+                        <span id="order_gross_total">0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Tax (<?php echo floatval($confData['tax_rate']); ?>%)</span>
+                        <span id="order_taxes">0.00</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total Payment</span>
+                        <span id="order_net_total">0.00</span>
+                    </div>
+                </div>
+
+                <div class="payment-methods">
+                    <div class="payment-method active">
+                        <i class="fas fa-credit-card"></i>
+                        <div>Credit Card</div>
+                    </div>
+                    <div class="payment-method">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <div>Cash</div>
+                    </div>
+                    <div class="payment-method">
+                        <i class="fas fa-qrcode"></i>
+                        <div>E-Wallet</div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn-place-order" id="order_btn" onclick="createOrder()" disabled>
+                    Place An Order
+                </button>
             </div>
         </div>
     </div>
-    
 </div>
-<?php
-include('footer.php');
-?>
 
 <script>
 
 load_category_product();
 
-function load_category_product(category_id = 0)
+function load_category_product(category_id = 'all')
 {
+    // Update menu title based on selected category
+    const menuTitle = document.getElementById('menu-title');
+    const categoryText = category_id === 'all' ? 'All Menu' : 
+        category_id.charAt(0).toUpperCase() + category_id.slice(1) + ' Menu';
+    menuTitle.textContent = categoryText;
+
+    // Convert 'all' to 0 or empty string for the backend
+    const apiCategoryId = category_id === 'all' ? '' : category_id;
+
     fetch('order_ajax.php', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ category_id: category_id })
+        body: JSON.stringify({
+            category_id: apiCategoryId,
+            action: 'get_products'
+        })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.error) {
-            console.error('Error:', data.error);
-        } else {
-            let html = '';
-            if(data.length > 0){
-                for(let i = 0; i < data.length; i++){
-                    let product_status = (data[i].product_status === 'Available') ? `<span class="badge bg-success">${data[i].product_status}</span>` : `<span class="badge bg-danger">${data[i].product_status}</span>`;
-                    let extraCode = (data[i].product_status === 'Available') ? `onclick="addToCart('${data[i].product_name}', ${data[i].product_price})" style="cursor:pointer"` : '';
-                    html += `
-                    <div class="col-md-2 text-center mb-3" ${extraCode}>
-                        <img src="${data[i].product_image}" class="img-thumbnail img-fluid mb-2">
-                        <br />
-                        <span id="product_name_${data[i].product_id}">${data[i].product_name}</span><br />
-                        ${product_status}
-                    </div>
-                    `;
-                }
-            } else {
-                html = '<p class="text-center">No Item Found</p>';
-            }
-            document.getElementById('dynamic_item').innerHTML = html;
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
         }
+        return response.json();
+    })
+    .then(data => {
+        console.log('API Response:', data); // Debug log
+        let html = '';
+        if(data.length > 0){
+            for(let i = 0; i < data.length; i++){
+                // Handle image path properly
+                let imageUrl;
+                if (data[i].product_image) {
+                    // Use the full path from the database
+                    imageUrl = data[i].product_image;
+                    console.log('Image path from database:', imageUrl);
+                } else {
+                    imageUrl = 'asset/images/default-food.jpg';
+                }
+
+                const description = data[i].product_description || 'Delicious food with special sauce';
+                const itemId = data[i].product_id;
+                const itemName = data[i].product_name.replace(/'/g, "\\'");
+                html += `
+                <div class="col-md-4 col-sm-6 mb-4">
+                    <div class="item-card">
+                        <div class="item-image-container">
+                            <img src="${imageUrl}" 
+                                 alt="${itemName}" 
+                                 class="item-image"
+                                 onerror="this.onerror=null; this.src='asset/images/default-food.jpg';">
+                        </div>
+                        <div class="item-info">
+                            <h3 class="item-name">${itemName}</h3>
+                            <p class="item-description">${description}</p>
+                            <div class="item-footer">
+                                <div class="price-section">
+                                    <span class="currency">₱</span>
+                                    <span class="item-price">${parseFloat(data[i].product_price).toFixed(2)}</span>
+                                </div>
+                                <div class="quantity-controls">
+                                    <button class="quantity-btn" onclick="event.stopPropagation(); handleQuantityChange('${itemId}', '${itemName}', -1, ${data[i].product_price}, '${imageUrl}')">−</button>
+                                    <span class="quantity-value" id="quantity_${itemId}">0</span>
+                                    <button class="quantity-btn" onclick="event.stopPropagation(); handleQuantityChange('${itemId}', '${itemName}', 1, ${data[i].product_price}, '${imageUrl}')">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+        } else {
+            html = '<div class="col-12"><p class="text-center">No Items Found</p></div>';
+        }
+        document.getElementById('dynamic_item').innerHTML = html;
+        
+        // Update quantities from cart
+        cart.forEach(item => {
+            const quantityElement = document.getElementById(`quantity_${item.id}`);
+            if (quantityElement) {
+                quantityElement.textContent = item.quantity;
+            }
+        });
+        
+        // Update active category button
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if ((category_id === 'all' && btn.textContent.includes('All Menu')) || 
+                (btn.getAttribute('onclick').includes(`'${category_id}'`))) {
+                btn.classList.add('active');
+            }
+        });
     })
     .catch(error => {
-        console.error('Fetch error:', error);
+        console.error('Error:', error);
+        document.getElementById('dynamic_item').innerHTML = '<div class="col-12"><div class="alert alert-danger">Error loading products. Please try again later.</div></div>';
     });
 }
 
@@ -154,75 +252,87 @@ function saveCart() {
     localStorage.setItem('cart', JSON.stringify(cart));
 }
 
-function addToCart(itemName, itemPrice) {
-    const item = cart.find(cartItem => cartItem.name === itemName);
+function addToCart(itemId, itemName, itemPrice, itemImage) {
+    const item = cart.find(cartItem => cartItem.id === itemId);
 
     if (item) {
         item.quantity += 1;
     } else {
-        cart.push({ name: itemName, price: itemPrice, quantity: 1 });
+        cart.push({ 
+            id: itemId,
+            name: itemName, 
+            price: itemPrice, 
+            quantity: 1,
+            image: itemImage
+        });
     }
-    saveCart();  // Save the updated cart to localStorage
+    saveCart();
     updateCart();
 }
 
 function updateCart() {
     const cartItems = document.getElementById('order_item_details');
-    cartItems.innerHTML = '';    
-    let cardHtml = '';
+    let html = '';
     let taxAmt = 0;
     total = 0;
+    
     cart.forEach(cartItem => {
         total += cartItem.price * cartItem.quantity;
 
-        cardHtml += `
-        <tr>
-            <td width="40%">${cartItem.name}</td>
-            <td width="15%"><input type="number" name="product_qty[]" min="1" value="${cartItem.quantity}" oninput="changeQuantity('${cartItem.name}', this.value)" style="width:50px;"></td>
-            <td width="15%">${cur}${parseFloat(cartItem.price).toFixed(2)}</td>
-            <td width="20%">${cur}${parseFloat(cartItem.price * cartItem.quantity).toFixed(2)}</td>
-            <td width="10%"><button type="button" class="btn btn-danger btn-sm" onclick="removeFromCart('${cartItem.name}')">x</button></td>
-        </tr>
-        `;
+        // Use the image path directly from the cart item
+        const imageUrl = cartItem.image;
+
+        html += `
+        <div class="order-item">
+            <div class="d-flex align-items-center" style="gap: 10px;">
+                <img src="${imageUrl}" 
+                     class="order-item-img" 
+                     alt="${cartItem.name}"
+                     onerror="this.onerror=null; this.src='asset/images/default-food.jpg';">
+                <div class="order-item-info">
+                    <div class="order-item-name">${cartItem.name}</div>
+                    <div class="order-item-price">${cur}${parseFloat(cartItem.price).toFixed(2)}</div>
+                </div>
+            </div>
+            <div class="quantity-controls">
+                <button class="quantity-btn" onclick="changeQuantity('${cartItem.id}', ${cartItem.quantity - 1})">−</button>
+                <div class="quantity-value">${cartItem.quantity}</div>
+                <button class="quantity-btn" onclick="changeQuantity('${cartItem.id}', ${cartItem.quantity + 1})">+</button>
+            </div>
+        </div>`;
     });
 
     taxAmt = parseFloat(total) * taxPer / 100;
-
-    cartItems.innerHTML = cardHtml;
+    cartItems.innerHTML = html;
 
     document.getElementById('order_gross_total').innerText = cur + parseFloat(total).toFixed(2);
     document.getElementById('order_taxes').innerText = cur + parseFloat(taxAmt).toFixed(2);
     total = parseFloat(total) + parseFloat(taxAmt);
     document.getElementById('order_net_total').innerText = cur + parseFloat(total).toFixed(2);
 
-    // Enable or disable the Create Order button based on cart contents
     const createOrderBtn = document.getElementById('order_btn');
     createOrderBtn.disabled = cart.length === 0;
 }
 
-function changeQuantity(itemName, newQuantity) {
-    const item = cart.find(cartItem => cartItem.name === itemName);
+function changeQuantity(itemId, newQuantity) {
+    const item = cart.find(cartItem => cartItem.id === itemId);
     
     if (item) {
-        // Update the item's quantity to the new value
-        item.quantity = parseInt(newQuantity, 10);
         if (newQuantity < 1) {
             // Remove the item if quantity is 0 or negative
-            removeFromCart(itemName);
+            removeFromCart(itemId);
         } else {
             // Update the quantity if it's valid
             item.quantity = newQuantity;
+            saveCart();
+            updateCart();
         }
-        saveCart();  // Save the updated cart to localStorage
-        updateCart();  // Refresh the cart display
     }
 }
 
-function removeFromCart(itemName) {
-    // Filter out the item to be removed from the cart array
-    cart = cart.filter(cartItem => cartItem.name !== itemName);
-    saveCart();  // Save the updated cart to localStorage
-    // Update the cart display after removing the item
+function removeFromCart(itemId) {
+    cart = cart.filter(cartItem => cartItem.id !== itemId);
+    saveCart();
     updateCart();
 }
 
@@ -238,9 +348,10 @@ function resetOrder(){
 
 function createOrder() {
     const orderData = {
-        order_number: 'ORD' + Date.now(), // Example order number
-        order_total: total, // Example total amount
-        order_created_by: '<?php echo $_SESSION['user_id']; ?>', // Example user ID (should be dynamic)
+        order_number: 'ORD' + Date.now(),
+        order_total: total,
+        order_created_by: '<?php echo $_SESSION['user_id']; ?>',
+        service_type: localStorage.getItem('selectedServiceType') || 'dine-in',
         items: cart.map(item => ({
             product_name: item.name,
             product_qty: item.quantity,
@@ -267,4 +378,57 @@ function createOrder() {
     .catch(error => console.error('Error:', error));
 }
 
+// Update the handleQuantityChange function
+function handleQuantityChange(itemId, itemName, change, itemPrice, itemImage) {
+    const item = cart.find(cartItem => cartItem.id === itemId);
+    const newQuantity = item ? item.quantity + change : (change > 0 ? 1 : 0);
+    
+    if (newQuantity <= 0) {
+        cart = cart.filter(cartItem => cartItem.id !== itemId);
+    } else {
+        if (item) {
+            item.quantity = newQuantity;
+        } else {
+            cart.push({ 
+                id: itemId,
+                name: itemName, 
+                price: itemPrice, 
+                quantity: newQuantity,
+                image: itemImage
+            });
+        }
+    }
+    
+    // Update quantity display
+    const quantityElement = document.getElementById(`quantity_${itemId}`);
+    if (quantityElement) {
+        quantityElement.textContent = newQuantity;
+    }
+    
+    saveCart();
+    updateCart();
+}
+
+// Add this new JavaScript function for handling service type selection
+function setServiceType(type) {
+    // Update active state of service type buttons
+    document.querySelectorAll('.service-type').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.querySelector('span').textContent.toLowerCase() === type.replace('-', ' ')) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Store selected service type
+    localStorage.setItem('selectedServiceType', type);
+}
+
+// Load previously selected service type when page loads
+window.addEventListener('load', function() {
+    const savedType = localStorage.getItem('selectedServiceType') || 'dine-in';
+    setServiceType(savedType);
+});
+
 </script>
+
+<?php include('footer.php'); ?>

@@ -7,10 +7,13 @@ checkAdminLogin();
 
 $message = '';
 
+// Get the role from URL parameter
+$selected_role = isset($_GET['role']) ? ucfirst($_GET['role']) : 'Admin';
+
 $user_name = '';
 $user_email = '';
 $user_password = '';
-$user_type = '';
+$user_type = $selected_role; // Set default user type based on URL parameter
 $user_status = '';
 
 // Handle form submission
@@ -58,11 +61,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 include('header.php');
 ?>
 
-<h1 class="mt-4">Add User</h1>
+<h1 class="mt-4">Add <?php echo $selected_role; ?></h1>
 <ol class="breadcrumb mb-4">
     <li class="breadcrumb-item"><a href="dashboard.php">Dashboard</a></li>
     <li class="breadcrumb-item"><a href="user.php">User Management</a></li>
-    <li class="breadcrumb-item active">Add User</li>
+    <li class="breadcrumb-item active">Add <?php echo $selected_role; ?></li>
 </ol>
     <?php
     if(isset($message) && $message !== ''){
@@ -76,38 +79,53 @@ include('header.php');
     <div class="row">
         <div class="col-md-4">
             <div class="card">
-                <div class="card-header">Add User</div>
+                <div class="card-header">Add <?php echo $selected_role; ?></div>
                 <div class="card-body">
-                    <form method="post" action="add_user.php" enctype="multipart/form-data">
+                    <form method="post" action="add_user.php?role=<?php echo strtolower($selected_role); ?>" enctype="multipart/form-data">
                         <div class="mb-3">
                             <label for="user_name">Name:</label>
-                            <input type="text" id="user_name" name="user_name" class="form-control" value="<?php echo htmlspecialchars($user_name); ?>">
+                            <input type="text" id="user_name" name="user_name" class="form-control" value="<?php echo htmlspecialchars($user_name); ?>" required>
                         </div>
                         <div class="mb-3">
                             <label for="user_email">Email:</label>
-                            <input type="email" id="user_email" name="user_email" class="form-control" value="<?php echo htmlspecialchars($user_email); ?>">
+                            <input type="email" id="user_email" name="user_email" class="form-control" value="<?php echo htmlspecialchars($user_email); ?>" required>
                         </div>
                         <div class="mb-3">
                             <label for="user_password">Password:</label>
-                            <input type="password" id="user_password" name="user_password" class="form-control" value="<?php echo htmlspecialchars($user_password); ?>">
+                            <div class="input-group">
+                                <input type="password" id="user_password" name="user_password" class="form-control" value="<?php echo htmlspecialchars($user_password); ?>" required>
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword()">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="user_type">User Type:</label>
-                            <select id="user_type" name="user_type" class="form-control">
-                                <option value="Admin" <?php echo ($user_type == 'Admin') ? 'selected' : ''; ?>>Admin</option>
-                                <option value="Cashier" <?php echo ($user_type == 'Cashier') ? 'selected' : ''; ?>>Cashier</option>
-                                <option value="Stockman" <?php echo ($user_type == 'Stockman') ? 'selected' : ''; ?>>Stockman</option>
-                            </select>
-                        </div>
+                        <input type="hidden" name="user_type" value="<?php echo htmlspecialchars($selected_role); ?>">
                         <div class="mt-2 text-center">
                             <input type="hidden" name="user_status" value="Active" />
-                            <input type="submit" value="Add User" class="btn btn-primary" />
+                            <input type="submit" value="Add <?php echo $selected_role; ?>" class="btn btn-primary" />
                         </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+
+<script>
+function togglePassword() {
+    const passwordInput = document.getElementById('user_password');
+    const icon = document.querySelector('.fa-eye');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+</script>
 
 <?php
 include('footer.php');

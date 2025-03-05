@@ -243,7 +243,7 @@ show_form:
                                 <div class="mb-3">
                                     <label for="user_password" class="form-label">Password:</label>
                                     <div class="password-container position-relative">
-                                        <input type="password" id="user_password" name="user_password" class="form-control" required>
+                                    <input type="password" id="user_password" name="user_password" class="form-control" required>
                                         <span class="password-toggle">
                                             <svg class="eye-icon" viewBox="0 0 24 24" width="24" height="24">
                                                 <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -415,10 +415,10 @@ show_form:
                                     const offset = circumference - (percent / 100 * circumference);
                                     circle.style.strokeDashoffset = offset;
                                 }
-                                
-                                function updateTimerDisplay() {
-                                    const minutes = Math.floor(timeLeft / 60);
-                                    const seconds = timeLeft % 60;
+                            
+                            function updateTimerDisplay() {
+                                const minutes = Math.floor(timeLeft / 60);
+                                const seconds = timeLeft % 60;
                                     const display = document.getElementById('timer');
                                     if (display) {
                                         display.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
@@ -514,7 +514,7 @@ show_form:
                     submitBtn.prop('disabled', false);
                 }, 10000);
             });
-
+            
             // Pagination functions
             let currentPage = 1;
             const rowsPerPage = 10;
@@ -583,6 +583,23 @@ show_form:
                         passwordInput.type = 'password';
                         this.classList.remove('active');
                     }
+                });
+            }
+        });
+
+        // Add dropdown icon functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const userMenuItem = document.querySelector('.nav-item');
+            if (userMenuItem) {
+                // Add dropdown icon
+                const dropdownIcon = document.createElement('span');
+                dropdownIcon.className = 'dropdown-indicator';
+                dropdownIcon.innerHTML = '<i class="fas fa-chevron-down"></i>';
+                userMenuItem.appendChild(dropdownIcon);
+
+                // Toggle active class on click
+                userMenuItem.addEventListener('click', function() {
+                    this.classList.toggle('active');
                 });
             }
         });
@@ -703,7 +720,7 @@ show_form:
             font-weight: normal;
             opacity: 0.7;
         }
-
+        
         .btn-primary {
             min-height: 35px;
             position: relative;
@@ -711,7 +728,7 @@ show_form:
             font-size: 1rem;
             font-weight: normal;
         }
-
+        
         .button-content {
             display: flex;
             align-items: center;
@@ -755,7 +772,7 @@ show_form:
             transform: scale(0.98);
             transition: all 0.3s ease;
         }
-
+        
         .form-label {
             color: white;
             font-family: "Cooper Black", "Cooper Std", serif;
@@ -895,6 +912,83 @@ show_form:
             opacity: 0.5;
             cursor: not-allowed;
             pointer-events: none;
+        }
+
+        .dropdown-select {
+            position: relative;
+            min-width: 80px;
+        }
+
+        .entries-dropdown {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            padding: 0.5rem 2rem 0.5rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #333;
+            width: 100%;
+        }
+
+        .dropdown-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: #666;
+        }
+
+        .entries-dropdown:hover {
+            border-color: #ccc;
+        }
+
+        .entries-dropdown:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        .dropdown-icon i {
+            font-size: 12px;
+            transition: transform 0.2s ease;
+        }
+
+        .entries-dropdown:focus + .dropdown-icon i {
+            transform: rotate(180deg);
+        }
+
+        /* User menu dropdown styles */
+        .nav-item {
+            position: relative;
+        }
+
+        .nav-item .dropdown-indicator {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: transform 0.3s ease;
+        }
+
+        .nav-item.active .dropdown-indicator {
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        .nav-item .fa-chevron-down {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .nav-item:hover .fa-chevron-down {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .nav-item.active .fa-chevron-down {
+            color: #ffffff;
         }
     </style>
 </body>
