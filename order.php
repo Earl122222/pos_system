@@ -3,7 +3,7 @@
 require_once 'db_connect.php';
 require_once 'auth_function.php';
 
-checkAdminOrUserLogin();
+checkOrderAccess();
 
 $confData = getConfigData($pdo);
 

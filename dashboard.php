@@ -89,10 +89,20 @@ include('header.php');
     <div class="charts-section">
         <div class="chart-card">
             <div class="chart-header">
-                <h2 class="chart-title">Revenue Trends</h2>
+                <h2 class="chart-title">Most Purchased Products</h2>
+                <div class="chart-filters">
+                    <select id="periodFilter" class="form-select">
+                        <option value="day">Daily</option>
+                        <option value="month">Monthly</option>
+                        <option value="year">Yearly</option>
+                    </select>
+                    <input type="date" id="dateFilter" class="form-control" value="<?php echo date('Y-m-d'); ?>">
+                </div>
             </div>
             <div class="chart-body">
-                <canvas id="salesLineChart"></canvas>
+                <div class="chart-container">
+                    <canvas id="productsChart"></canvas>
+                </div>
             </div>
         </div>
 
@@ -101,45 +111,107 @@ include('header.php');
                 <h2 class="chart-title">Product Distribution</h2>
             </div>
             <div class="chart-body">
-                <canvas id="productsPieChart"></canvas>
+                <div class="chart-container">
+                    <canvas id="productsPieChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<style>
+.charts-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.chart-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+}
+
+.chart-header {
+    margin-bottom: 1rem;
+}
+
+.chart-title {
+    font-size: 1.25rem;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.chart-body {
+    position: relative;
+    width: 100%;
+    height: 400px;
+}
+
+.chart-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.chart-filters {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.chart-filters select,
+.chart-filters input {
+    padding: 0.5rem;
+    border: 1px solid rgba(168, 102, 102, 0.2);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    background-color: white;
+    transition: all 0.3s ease;
+}
+
+.chart-filters select:focus,
+.chart-filters input:focus {
+    outline: none;
+    border-color: var(--color-600);
+    box-shadow: 0 0 0 2px rgba(168, 102, 102, 0.1);
+}
+
+.chart-filters select:hover,
+.chart-filters input:hover {
+    border-color: var(--color-400);
+}
+
+@media (max-width: 1024px) {
+    .charts-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-body {
+        height: 350px;
+    }
+}
+</style>
+
 <script>
 // Register Chart.js plugins
 Chart.register(ChartDataLabels);
 
-// Sales Line Chart
-const salesData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
-    datasets: [{
-        label: 'Total Sales',
-        data: [1000, 2000, 1500, 3000, 2500, 4000, 4500],
-        backgroundColor: 'rgba(231, 76, 60, 0.1)',
-        borderColor: '#e74c3c',
-        borderWidth: 2,
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: '#ffffff',
-        pointBorderColor: '#e74c3c',
-        pointBorderWidth: 2,
-        pointRadius: 5,
-        pointHoverRadius: 10,
-        pointHoverBackgroundColor: '#e74c3c',
-        pointHoverBorderColor: '#ffffff',
-        pointHoverBorderWidth: 3
-    }]
-};
+// Initialize charts as global variables
+let productsChart = null;
+let pieChart = null;
 
-// Create Sales Line Chart
-const salesChart = new Chart(document.getElementById('salesLineChart'), {
+// Chart configuration
+const chartConfig = {
     type: 'line',
-    data: salesData,
     options: {
         responsive: true,
-        maintainAspectRatio: false,
+        maintainAspectRatio: true,
         scales: {
             y: {
                 beginAtZero: true,
@@ -154,7 +226,17 @@ const salesChart = new Chart(document.getElementById('salesLineChart'), {
                         family: 'Inter'
                     },
                     callback: function(value) {
-                        return '<?php echo $confData['currency']; ?>' + value.toLocaleString();
+                        return Math.round(value); // Show whole numbers only
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Quantity Sold',
+                    color: '#2c3e50',
+                    font: {
+                        size: 14,
+                        family: 'Inter',
+                        weight: 'bold'
                     }
                 }
             },
@@ -167,7 +249,9 @@ const salesChart = new Chart(document.getElementById('salesLineChart'), {
                     font: {
                         size: 12,
                         family: 'Inter'
-                    }
+                    },
+                    maxRotation: 45,
+                    minRotation: 45
                 }
             }
         },
@@ -199,26 +283,15 @@ const salesChart = new Chart(document.getElementById('salesLineChart'), {
                 },
                 padding: 12,
                 cornerRadius: 8,
-                displayColors: false,
+                displayColors: true,
                 callbacks: {
                     label: function(context) {
-                        return 'Revenue: <?php echo $confData['currency']; ?>' + context.parsed.y.toLocaleString();
+                        return context.dataset.label + ': ' + context.parsed.y + ' units sold';
                     }
                 }
             },
             datalabels: {
-                color: '#2c3e50',
-                anchor: 'end',
-                align: 'top',
-                formatter: function(value) {
-                    return '<?php echo $confData['currency']; ?>' + value.toLocaleString();
-                },
-                font: {
-                    weight: 'bold'
-                },
-                display: function(context) {
-                    return context.dataIndex === context.dataset.data.length - 1;
-                }
+                display: false // Disable datalabels for the line chart
             }
         },
         interaction: {
@@ -226,115 +299,176 @@ const salesChart = new Chart(document.getElementById('salesLineChart'), {
             mode: 'index'
         },
         animation: {
-            duration: 1000,
+            duration: 750,
             easing: 'easeInOutQuart'
-        },
-        hover: {
-            mode: 'index',
-            intersect: false
         }
     }
-});
+};
 
-// Products Pie Chart
-const categoryLabels = <?php echo json_encode(array_column($categories, 'category_name')); ?>;
-const categoryData = <?php echo json_encode(array_column($categories, 'total')); ?>;
-const backgroundColors = [
-    'rgba(231, 76, 60, 0.8)',   // Red
-    'rgba(52, 152, 219, 0.8)',  // Blue
-    'rgba(46, 204, 113, 0.8)',  // Green
-    'rgba(241, 196, 15, 0.8)',  // Yellow
-    'rgba(155, 89, 182, 0.8)',  // Purple
-    'rgba(52, 73, 94, 0.8)',    // Dark Blue
-    'rgba(230, 126, 34, 0.8)',  // Orange
-    'rgba(149, 165, 166, 0.8)'  // Gray
-];
+// Function to load product statistics
+function loadProductStats() {
+    const period = document.getElementById('periodFilter').value;
+    const date = document.getElementById('dateFilter').value;
 
-// Create Products Pie Chart
-const pieChart = new Chart(document.getElementById('productsPieChart'), {
-    type: 'doughnut',
-    data: {
-        labels: categoryLabels,
-        datasets: [{
-            label: "Products per Category",
-            data: categoryData,
-            backgroundColor: backgroundColors.slice(0, categoryLabels.length),
-            borderColor: '#ffffff',
-            borderWidth: 2,
-            hoverBackgroundColor: backgroundColors.map(color => color.replace('0.8', '1')),
-            hoverBorderColor: '#ffffff',
-            hoverBorderWidth: 4,
-            hoverOffset: 15
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'right',
-                labels: {
-                    color: '#2c3e50',
-                    font: {
-                        size: 12,
+    // Show loading state
+    if (productsChart) {
+        productsChart.data.datasets.forEach(dataset => {
+            dataset.data = dataset.data.map(() => null);
+        });
+        productsChart.update('none');
+    }
+
+    fetch(`get_product_stats.php?period=${period}&start_date=${date}`)
+        .then(response => response.json())
+        .then(data => {
+            if (!productsChart) {
+                // Initial chart creation
+                const ctx = document.getElementById('productsChart').getContext('2d');
+                chartConfig.data = data;
+                productsChart = new Chart(ctx, chartConfig);
+            } else {
+                // Update existing chart
+                productsChart.data.labels = data.labels;
+                productsChart.data.datasets = data.datasets;
+                productsChart.update();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading product stats:', error);
+            if (productsChart) {
+                // Clear data on error
+                productsChart.data.datasets.forEach(dataset => {
+                    dataset.data = [];
+                });
+                productsChart.update();
+            }
+        });
+}
+
+// Debounce function
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Add debounced event listeners for filters
+const debouncedLoadProductStats = debounce(loadProductStats, 300);
+
+document.getElementById('periodFilter').addEventListener('change', debouncedLoadProductStats);
+document.getElementById('dateFilter').addEventListener('change', debouncedLoadProductStats);
+
+// Initialize charts when document is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Load initial product stats
+    loadProductStats();
+
+    // Initialize pie chart
+    const categoryLabels = <?php echo json_encode(array_column($categories, 'category_name')); ?>;
+    const categoryData = <?php echo json_encode(array_column($categories, 'total')); ?>;
+    const backgroundColors = [
+        'rgba(231, 76, 60, 0.8)',   // Red
+        'rgba(52, 152, 219, 0.8)',  // Blue
+        'rgba(46, 204, 113, 0.8)',  // Green
+        'rgba(241, 196, 15, 0.8)',  // Yellow
+        'rgba(155, 89, 182, 0.8)',  // Purple
+        'rgba(52, 73, 94, 0.8)',    // Dark Blue
+        'rgba(230, 126, 34, 0.8)',  // Orange
+        'rgba(149, 165, 166, 0.8)'  // Gray
+    ];
+
+    const pieCtx = document.getElementById('productsPieChart').getContext('2d');
+    pieChart = new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+            labels: categoryLabels,
+            datasets: [{
+                label: "Products per Category",
+                data: categoryData,
+                backgroundColor: backgroundColors.slice(0, categoryLabels.length),
+                borderColor: '#ffffff',
+                borderWidth: 2,
+                hoverBackgroundColor: backgroundColors.map(color => color.replace('0.8', '1')),
+                hoverBorderColor: '#ffffff',
+                hoverBorderWidth: 4,
+                hoverOffset: 15
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        color: '#2c3e50',
+                        font: {
+                            size: 12,
+                            family: 'Inter'
+                        },
+                        padding: 20,
+                        boxWidth: 15,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: 'rgba(44, 62, 80, 0.95)',
+                    titleFont: {
+                        size: 14,
+                        family: 'Inter',
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13,
                         family: 'Inter'
                     },
-                    padding: 20,
-                    boxWidth: 15,
-                    usePointStyle: true
-                }
-            },
-            tooltip: {
-                enabled: true,
-                backgroundColor: 'rgba(44, 62, 80, 0.95)',
-                titleFont: {
-                    size: 14,
-                    family: 'Inter',
-                    weight: 'bold'
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value * 100) / total).toFixed(1);
+                            return `${label}: ${value} products (${percentage}%)`;
+                        }
+                    }
                 },
-                bodyFont: {
-                    size: 13,
-                    family: 'Inter'
-                },
-                padding: 12,
-                cornerRadius: 8,
-                callbacks: {
-                    label: function(context) {
-                        const label = context.label || '';
-                        const value = context.parsed;
+                datalabels: {
+                    color: '#ffffff',
+                    font: {
+                        weight: 'bold',
+                        size: 11
+                    },
+                    formatter: function(value, context) {
                         const total = context.dataset.data.reduce((a, b) => a + b, 0);
                         const percentage = ((value * 100) / total).toFixed(1);
-                        return `${label}: ${value} products (${percentage}%)`;
+                        return percentage + '%';
+                    },
+                    display: function(context) {
+                        return context.dataset.data[context.dataIndex] > 0;
                     }
                 }
             },
-            datalabels: {
-                color: '#ffffff',
-                font: {
-                    weight: 'bold',
-                    size: 11
-                },
-                formatter: function(value, context) {
-                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                    const percentage = ((value * 100) / total).toFixed(1);
-                    return percentage + '%';
-                },
-                display: function(context) {
-                    return context.dataset.data[context.dataIndex] > 0;
-                }
+            cutout: '60%',
+            layout: {
+                padding: 20
+            },
+            animation: {
+                animateScale: true,
+                animateRotate: true,
+                duration: 750,
+                easing: 'easeInOutQuart'
             }
-        },
-        cutout: '60%',
-        layout: {
-            padding: 20
-        },
-        animation: {
-            animateScale: true,
-            animateRotate: true,
-            duration: 1000,
-            easing: 'easeInOutQuart'
         }
-    }
+    });
 });
 </script>
 

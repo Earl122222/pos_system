@@ -159,8 +159,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     // Debug: Log the session data
                     error_log('Login successful. Session data: ' . print_r($_SESSION, true));
                     
-                    // Redirect to dashboard
-                    header('Location: dashboard.php');
+                    // Redirect based on user type
+                    if ($user['user_type'] === 'Cashier') {
+                        header('Location: add_order.php');
+                    } else {
+                        header('Location: dashboard.php');
+                    }
                     exit();
                 } else {
                     // Ensure connection is active before recording attempt

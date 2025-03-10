@@ -15,24 +15,60 @@ function requireLogin() {
 // Function to redirect if already logged in
 function redirectIfLoggedIn() {
     if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) {
-        header('Location: dashboard.php');
+        if ($_SESSION['user_type'] === 'Cashier') {
+            header('Location: add_order.php');
+        } else {
+            header('Location: dashboard.php');
+        }
         exit();
     }
 }
 
 // Function to check admin only access
 function checkAdminLogin() {
-    if (!isset($_SESSION['user_type']) || $_SESSION['user_type'] !== 'Admin') {
-        header('Location: index.php');
+    requireLogin();
+    if ($_SESSION['user_type'] !== 'Admin') {
+        if ($_SESSION['user_type'] === 'Cashier') {
+            header('Location: add_order.php');
+        } else {
+            header('Location: dashboard.php');
+        }
         exit;
     } 
 }
 
 // Function to check if user is either admin or regular user
 function checkAdminOrUserLogin() {
-    if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
-        header('Location: login.php');
+    requireLogin();
+    if (!in_array($_SESSION['user_type'], ['Admin', 'User'])) {
+        if ($_SESSION['user_type'] === 'Cashier') {
+            header('Location: add_order.php');
+        } else {
+            header('Location: dashboard.php');
+        }
         exit();
+    }
+}
+
+// Function to check if user is a cashier
+function checkCashierLogin() {
+    requireLogin();
+    if ($_SESSION['user_type'] !== 'Cashier') {
+        if ($_SESSION['user_type'] === 'Admin') {
+            header('Location: dashboard.php');
+        } else {
+            header('Location: add_order.php');
+        }
+        exit;
+    }
+}
+
+// Function to check if user has order access (Admin or Cashier)
+function checkOrderAccess() {
+    requireLogin();
+    if (!in_array($_SESSION['user_type'], ['Admin', 'Cashier'])) {
+        header('Location: dashboard.php');
+        exit;
     }
 }
 
