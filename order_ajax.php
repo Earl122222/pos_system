@@ -53,67 +53,216 @@ if(isset($_GET['action'])){
 // Check if category_id is provided in POST data
 $input = json_decode(file_get_contents('php://input'), true);
 //print_r($input);
-if (isset($input['category_id'])) {
-    $categoryId = $input['category_id'];
-    if($categoryId > 0){
-        // Prepare the SQL statement
-        $stmt = $pdo->prepare("SELECT * FROM pos_product WHERE category_id = :category_id ORDER BY product_name ASC");
-        $stmt->bindParam(':category_id', $categoryId, PDO::PARAM_INT);
-    } else {
-        // Prepare the SQL statement
-        $stmt = $pdo->prepare("SELECT * FROM pos_product ORDER BY product_name ASC");
-    }
+if (isset($input['action']) && $input['action'] === 'get_products') {
+    $categoryId = $input['category_id'] ?? '';
+    
+    try {
+        if($categoryId === 'all') {
+            // Get all active products
+            $stmt = $pdo->prepare("
+                SELECT p.*, c.category_name 
+                FROM pos_product p
+                LEFT JOIN pos_category c ON p.category_id = c.category_id
+                WHERE p.product_status = 'Available'
+                ORDER BY p.product_name ASC
+            ");
+            $stmt->execute();
+        } else {
+            // Get products for specific category
+            $stmt = $pdo->prepare("
+                SELECT p.*, c.category_name 
+                FROM pos_product p
+                LEFT JOIN pos_category c ON p.category_id = c.category_id
+                WHERE p.category_id = :category_id 
+                AND p.product_status = 'Available'
+                ORDER BY p.product_name ASC
+            ");
+            $stmt->bindParam(':category_id', $categoryId, PDO::PARAM_INT);
+            $stmt->execute();
+        }
 
-    // Execute the statement
-    $stmt->execute();
+        // Fetch all results
+        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Fetch all results
-    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Return results as JSON
-    echo json_encode($products);
-}
-
-if(isset($input['order_number'])){
-    // Prepare to insert order into pos_order table
-    $stmt = $pdo->prepare("INSERT INTO pos_order (order_number, order_total, order_created_by) VALUES (?, ?, ?)");
-
-    // Bind parameters
-    $stmt->execute([
-        $input['order_number'],
-        $input['order_total'],
-        $input['order_created_by']
-    ]);
-
-    // Get the last inserted order_id
-    $order_id = $pdo->lastInsertId();
-
-    // Insert each item into pos_order_item table
-    $stmt = $pdo->prepare("INSERT INTO pos_order_item (order_id, product_name, product_qty, product_price) VALUES (?, ?, ?, ?)");
-
-    foreach ($input['items'] as $item) {
-        $stmt->execute([
-            $order_id,
-            $item['product_name'],
-            $item['product_qty'],
-            $item['product_price']
+        // Return results as JSON
+        echo json_encode($products);
+        exit;
+    } catch (PDOException $e) {
+        echo json_encode([
+            'error' => true,
+            'message' => 'Error loading products: ' . $e->getMessage()
         ]);
+        exit;
     }
-
-    // Return success response
-    echo json_encode(['success' => true, 'order_id' => $order_id]);
 }
 
-if(isset($_POST['id'])){
-    // Delete items from pos_order_item table
-    $stmt = $pdo->prepare("DELETE FROM pos_order_item WHERE order_id = ?");
-    $stmt->execute([$_POST['id']]);
+if(isset($input['order_number'])) {
+    try {
+        // Start transaction
+        $pdo->beginTransaction();
+        
+        // Get payment method and service type from input
+        $payment_method = $input['payment_method'] ?? 'cash';
+        $service_type = $input['service_type'] ?? 'dine-in';
+        $discount_type = $input['discount_type'] ?? 'none';
+        $discount_amount = floatval($input['discount_amount'] ?? 0);
+        $tax_amount = floatval($input['tax_amount'] ?? 0);
+        $subtotal = floatval($input['subtotal'] ?? 0);
+        $order_total = floatval($input['order_total'] ?? 0);
 
-    // Delete the order from pos_order table
-    $stmt = $pdo->prepare("DELETE FROM pos_order WHERE order_id = ?");
-    $stmt->execute([$_POST['id']]);
-    // Return success response
-    echo json_encode(['success' => true]);
+        // If subtotal wasn't provided, calculate it from items
+        if ($subtotal == 0) {
+            $subtotal = array_reduce($input['items'], function($carry, $item) {
+                return $carry + ($item['product_qty'] * $item['product_price']);
+            }, 0);
+        }
+        
+        // Prepare to insert order into pos_order table with enhanced fields
+        $stmt = $pdo->prepare("INSERT INTO pos_order (
+            order_number, 
+            order_total,
+            order_subtotal,
+            order_tax,
+            order_discount,
+            discount_type,
+            payment_method,
+            service_type,
+            order_created_by,
+            order_datetime
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
+
+        // Execute with parameters
+        $stmt->execute([
+            $input['order_number'],
+            $order_total,
+            $subtotal,
+            $tax_amount,
+            $discount_amount,
+            $discount_type,
+            $payment_method,
+            $service_type,
+            $_SESSION['user_id']
+        ]);
+
+        // Get the last inserted order_id
+        $order_id = $pdo->lastInsertId();
+
+        // Insert each item into pos_order_item table
+        $stmt = $pdo->prepare("INSERT INTO pos_order_item (
+            order_id, 
+            product_id, 
+            product_qty, 
+            product_price,
+            item_total
+        ) VALUES (?, ?, ?, ?, ?)");
+
+        foreach ($input['items'] as $item) {
+            $item_total = $item['product_qty'] * $item['product_price'];
+            $stmt->execute([
+                $order_id,
+                $item['product_id'],
+                $item['product_qty'],
+                $item['product_price'],
+                $item_total
+            ]);
+        }
+
+        // Commit transaction
+        $pdo->commit();
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true, 
+            'order_id' => $order_id,
+            'message' => 'Order created successfully'
+        ]);
+        exit;
+    } catch (Exception $e) {
+        // Rollback transaction on error
+        $pdo->rollBack();
+        
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        exit;
+    }
+}
+
+if(isset($_POST['id'])) {
+    try {
+        // Start transaction
+        $pdo->beginTransaction();
+        
+        // Delete items from pos_order_item table
+        $stmt = $pdo->prepare("DELETE FROM pos_order_item WHERE order_id = ?");
+        $stmt->execute([$_POST['id']]);
+
+        // Delete the order from pos_order table
+        $stmt = $pdo->prepare("DELETE FROM pos_order WHERE order_id = ?");
+        $stmt->execute([$_POST['id']]);
+        
+        // Commit transaction
+        $pdo->commit();
+        
+        // Return success response
+        echo json_encode(['success' => true]);
+        exit;
+    } catch (Exception $e) {
+        // Rollback transaction on error
+        $pdo->rollBack();
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        exit;
+    }
+}
+
+function createOrderAndUpdateSales($orderData) {
+    global $pdo;
+    try {
+        // Start transaction
+        $pdo->beginTransaction();
+
+        // Insert order into pos_order table
+        $orderStmt = $pdo->prepare("INSERT INTO pos_order (order_number, order_total, order_created_by) VALUES (?, ?, ?)");
+        $orderStmt->execute([$orderData['order_number'], $orderData['order_total'], $orderData['order_created_by']]);
+        $orderId = $pdo->lastInsertId();
+
+        // Insert order items into pos_order_item table
+        $itemStmt = $pdo->prepare("INSERT INTO pos_order_item (order_id, product_id, product_qty, item_total) VALUES (?, ?, ?, ?)");
+        foreach ($orderData['items'] as $item) {
+            $itemStmt->execute([$orderId, $item['product_id'], $item['product_qty'], $item['item_total']]);
+        }
+
+        // Commit transaction
+        $pdo->commit();
+
+        // Update sales data (this can be a separate function or inline logic)
+        updateSalesData($orderData['order_created_by']);
+
+        return ['status' => 'success', 'message' => 'Order created successfully.'];
+    } catch (Exception $e) {
+        // Rollback transaction on error
+        $pdo->rollBack();
+        return ['status' => 'error', 'message' => $e->getMessage()];
+    }
+}
+
+function updateSalesData($userId) {
+    global $pdo;
+    try {
+        // Example logic to update sales data
+        $stmt = $pdo->prepare("UPDATE sales_summary SET total_sales = total_sales + ? WHERE user_id = ?");
+        $stmt->execute([$_POST['order_total'], $userId]);
+    } catch (Exception $e) {
+        // Handle any errors
+        error_log('Error updating sales data: ' . $e->getMessage());
+    }
+}
+
+// Example usage
+if (isset($_POST['create_order'])) {
+    $orderData = $_POST['order_data'];
+    $result = createOrderAndUpdateSales($orderData);
+    echo json_encode($result);
+    exit;
 }
 
 ?>

@@ -110,12 +110,95 @@
             };
         </script>
         <style>
-            /* Dropdown indicator adjustments */
+            /* Base resets */
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: #f5f5f5;
+            }
+
+            /* Layout structure */
+            .app-container {
+                display: flex;
+                min-height: 100vh;
+                width: 100%;
+                background-color: #f5f5f5;
+            }
+
+            .app-main {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                min-height: 100vh;
+                background-color: #f5f5f5;
+            }
+
+            .app-content {
+                flex: 1;
+                padding: 20px;
+                background-color: #f5f5f5;
+            }
+
+            /* Container adjustments */
+            .container-fluid {
+                width: 100%;
+                padding-right: 20px;
+                padding-left: 20px;
+                margin-right: auto;
+                margin-left: auto;
+            }
+
+            /* Menu Items section */
+            .menu-items-section {
+                background: #fff;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                margin-bottom: 20px;
+                overflow: hidden;
+            }
+
+            .menu-items-header {
+                padding: 15px 20px;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+                background-color: #fff;
+            }
+
+            .menu-items-body {
+                padding: 20px;
+            }
+
+            /* Order Details section */
+            .order-details-section {
+                background: #fff;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                padding: 20px;
+                margin-top: 20px;
+            }
+
+            /* Header adjustments */
+            .app-header {
+                padding: 15px 20px;
+                background: #fff;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+                margin-bottom: 20px;
+            }
+
+            /* Existing styles continue below */
             .menu-link {
                 position: relative;
                 display: flex;
                 align-items: center;
-                padding-right: 35px !important;
+                padding: 12px 15px;
+                text-decoration: none;
+                color: rgba(255, 255, 255, 0.8);
+                transition: all 0.3s ease;
             }
 
             .menu-link .dropdown-indicator {
@@ -250,6 +333,58 @@
             .app-sidebar.collapsed .menu-link.active {
                 background: rgba(255, 255, 255, 0.1);
             }
+
+            #receiptContent {
+                font-family: 'Inter', sans-serif;
+                line-height: 1.6;
+                color: #000;
+            }
+
+            #receiptContent h5 {
+                margin-bottom: 20px;
+                text-align: center;
+            }
+
+            #receiptContent .receipt-header,
+            #receiptContent .receipt-footer {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            #receiptContent .receipt-details,
+            #receiptContent .receipt-items {
+                margin-bottom: 20px;
+            }
+
+            #receiptContent .receipt-details th,
+            #receiptContent .receipt-details td,
+            #receiptContent .receipt-items th,
+            #receiptContent .receipt-items td {
+                padding: 5px;
+                text-align: left;
+            }
+
+            #receiptContent .receipt-total {
+                font-weight: bold;
+                text-align: right;
+            }
+
+            @media print {
+                body * {
+                    visibility: hidden;
+                }
+                #receiptContent, #receiptContent * {
+                    visibility: visible;
+                }
+                #receiptContent {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                    padding: 20px;
+                    box-sizing: border-box;
+                }
+            }
         </style>
     </head>
     <body>
@@ -265,51 +400,9 @@
                     </button>
                 </div>
                 <div class="sidebar-menu">
-                    <ul class="menu-list">
-                        <li class="menu-item">
-                            <a href="dashboard.php" class="menu-link">
-                                <i class="fas fa-tachometer-alt"></i>
-                                <span>Dashboard</span>
-                            </a>
-                        </li>
-                        <?php if(isset($_SESSION['user_type'])): ?>
-                            <?php if($_SESSION['user_type'] === 'Admin'): ?>
-                                <li class="menu-item">
-                                    <a href="category.php" class="menu-link">
-                                        <i class="fas fa-th-list"></i>
-                                        <span>Category</span>
-                                    </a>
-                                </li>
-                                <li class="menu-item">
-                                    <div class="submenu-wrapper">
-                                        <a href="#" class="menu-link" onclick="toggleSubmenu(event, this)">
-                                            <i class="fas fa-users"></i>
-                                            <span>User</span>
-                                            <i class="fas fa-chevron-down dropdown-indicator"></i>
-                                        </a>
-                                        <ul class="submenu">
-                                            <li><a href="user.php" class="submenu-link"><i class="fas fa-users-gear"></i>Manage Users</a></li>
-                                            <li><a href="add_user.php?role=cashier" class="submenu-link"><i class="fas fa-cash-register"></i>Add Cashier</a></li>
-                                            <li><a href="add_user.php?role=stockman" class="submenu-link"><i class="fas fa-boxes"></i>Add Stockman</a></li>
-                                            <li><a href="add_user.php?role=admin" class="submenu-link"><i class="fas fa-user-shield"></i>Add Admin</a></li>
-                                        </ul>
-                                    </div>
-                                </li>
-                                <li class="menu-item">
-                                    <a href="ingredients.php" class="menu-link">
-                                        <i class="fas fa-mortar-pestle"></i>
-                                        <span>Ingredients</span>
-                                    </a>
-                                </li>
-                                <li class="menu-item">
-                                    <a href="product.php" class="menu-link">
-                                        <i class="fas fa-utensils"></i>
-                                        <span>Product</span>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                            
-                            <?php if($_SESSION['user_type'] === 'Admin' || $_SESSION['user_type'] === 'Cashier'): ?>
+                    <nav id="mainMenu">
+                        <ul class="menu-list">
+                            <?php if ($_SESSION['user_type'] === 'Cashier'): ?>
                                 <li class="menu-item">
                                     <a href="add_order.php" class="menu-link">
                                         <i class="fas fa-cart-plus"></i>
@@ -317,14 +410,116 @@
                                     </a>
                                 </li>
                                 <li class="menu-item">
-                                    <a href="order.php" class="menu-link">
+                                    <a href="sales.php" class="menu-link">
+                                        <i class="fas fa-cash-register"></i>
+                                        <span>Sales</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="order_history.php" class="menu-link">
                                         <i class="fas fa-history"></i>
                                         <span>Order History</span>
                                     </a>
                                 </li>
+                                <li class="menu-item">
+                                    <a href="cashier_report.php" class="menu-link">
+                                        <i class="fas fa-chart-bar"></i>
+                                        <span>My Performance</span>
+                                    </a>
+                                </li>
+                            <?php else: ?>
+                                <li class="menu-item">
+                                    <a href="dashboard.php" class="menu-link">
+                                        <i class="fas fa-tachometer-alt"></i>
+                                        <span>Dashboard</span>
+                                    </a>
+                                </li>
+                                <?php if(isset($_SESSION['user_type'])): ?>
+                                    <?php if($_SESSION['user_type'] === 'Admin'): ?>
+                                        <li class="menu-item">
+                                            <a href="category.php" class="menu-link">
+                                                <i class="fas fa-th-list"></i>
+                                                <span>Category</span>
+                                            </a>
+                                        </li>
+                                        <li class="menu-item">
+                                            <div class="submenu-wrapper">
+                                                <a href="#" class="menu-link" onclick="toggleSubmenu(event, this)">
+                                                    <i class="fas fa-users"></i>
+                                                    <span>User</span>
+                                                    <i class="fas fa-chevron-down dropdown-indicator"></i>
+                                                </a>
+                                                <ul class="submenu">
+                                                    <li><a href="user.php" class="submenu-link"><i class="fas fa-users-gear"></i>Manage Users</a></li>
+                                                    <li><a href="add_user.php?role=cashier" class="submenu-link"><i class="fas fa-cash-register"></i>Add Cashier</a></li>
+                                                    <li><a href="add_user.php?role=stockman" class="submenu-link"><i class="fas fa-boxes"></i>Add Stockman</a></li>
+                                                </ul>
+                                            </div>
+                                        </li>
+                                        <li class="menu-item">
+                                            <a href="ingredients.php" class="menu-link">
+                                                <i class="fas fa-mortar-pestle"></i>
+                                                <span>Ingredients</span>
+                                            </a>
+                                        </li>
+                                        <li class="menu-item">
+                                            <a href="ingredient_requests.php" class="menu-link">
+                                                <i class="fas fa-clipboard-list"></i>
+                                                <span>List of Request</span>
+                                            </a>
+                                        </li>
+                                        <li class="menu-item">
+                                            <a href="product.php" class="menu-link">
+                                                <i class="fas fa-utensils"></i>
+                                                <span>Product</span>
+                                            </a>
+                                        </li>
+                                        <li class="menu-item">
+                                            <div class="submenu-wrapper">
+                                                <a href="#" class="menu-link" onclick="toggleSubmenu(event, this)">
+                                                    <i class="fas fa-store"></i>
+                                                    <span>Branch</span>
+                                                    <i class="fas fa-chevron-down dropdown-indicator"></i>
+                                                </a>
+                                                <ul class="submenu">
+                                                    <li><a href="add_branch.php" class="submenu-link"><i class="fas fa-plus"></i>Add Branch</a></li>
+                                                    <li><a href="branch_details.php" class="submenu-link"><i class="fas fa-info-circle"></i>Branch Details</a></li>
+                                                    <li><a href="branch_overview.php" class="submenu-link"><i class="fas fa-chart-bar"></i>Branch Overview</a></li>
+                                                </ul>
+                                            </div>
+                                        </li>
+                                        <li class="menu-item">
+                                            <a href="branch_sales.php?branch=main" class="menu-link">
+                                                <i class="fas fa-chart-line"></i>
+                                                <span>Sales</span>
+                                            </a>
+                                        </li>
+                                    <?php endif; ?>
+                                    
+                                    <?php if($_SESSION['user_type'] === 'Cashier'): ?>
+                                        <li class="menu-item">
+                                            <a href="add_order.php" class="menu-link">
+                                                <i class="fas fa-cart-plus"></i>
+                                                <span>Create Order</span>
+                                            </a>
+                                        </li>
+                                        <li class="menu-item">
+                                            <a href="order.php" class="menu-link">
+                                                <i class="fas fa-history"></i>
+                                                <span>Order History</span>
+                                            </a>
+                                        </li>
+                                        <li class="menu-item">
+                                            <a href="cashier_report.php" class="menu-link">
+                                                <i class="fas fa-chart-line"></i>
+                                                <span>My Performance</span>
+                                            </a>
+                                        </li>
+                                    <?php endif; ?>
+                                <?php endif; ?>
                             <?php endif; ?>
-                        <?php endif; ?>
-                    </ul>
+                        </ul>
+                    </nav>
                 </div>
             </aside>
 
@@ -475,4 +670,92 @@ setInterval(updateClock, 1000);
             }
         });
     });
+</script>
+
+<!-- Modal Structure -->
+<div id="receiptModal" class="modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Receipt</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Receipt details will be inserted here -->
+        <div id="receiptContent"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showReceipt(orderData) {
+  const receiptHTML = `
+    <div class="receipt-header">
+      <h5>MORE BITES</h5>
+      <p>123 Main St<br>Email: admin@restaurant.com<br>Tel: 123-456-7890</p>
+    </div>
+    <div class="receipt-details">
+      <table class="table">
+        <tr><th>Order #:</th><td>${orderData.order_number}</td></tr>
+        <tr><th>Date:</th><td>${new Date().toLocaleString()}</td></tr>
+        <tr><th>Service:</th><td>${orderData.service_type}</td></tr>
+        <tr><th>Payment:</th><td>${orderData.payment_method}</td></tr>
+      </table>
+    </div>
+    <div class="receipt-items">
+      <table class="table">
+        <thead>
+          <tr><th>Item</th><th>Amount</th></tr>
+        </thead>
+        <tbody>
+          ${orderData.items.map(item => `
+            <tr>
+              <td>${item.name} x ${item.quantity}</td>
+              <td>₱${item.total.toFixed(2)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="receipt-total">
+      <p>Subtotal: ₱${orderData.subtotal.toFixed(2)}</p>
+      <p>Tax: ₱${orderData.tax.toFixed(2)}</p>
+      <p>Total: ₱${orderData.total.toFixed(2)}</p>
+    </div>
+    <div class="receipt-footer">
+      <p>Thank you for dining with us!<br>Please come again</p>
+    </div>
+  `;
+
+  document.getElementById('receiptContent').innerHTML = receiptHTML;
+  $('#receiptModal').modal('show');
+}
+
+function printReceipt() {
+  const printContents = document.getElementById('receiptContent').innerHTML;
+  const originalContents = document.body.innerHTML;
+  document.body.innerHTML = printContents;
+  window.print();
+  document.body.innerHTML = originalContents;
+  location.reload();
+}
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Check if the current page is the "Create Order" page
+  if (window.location.pathname.includes('create_order.php')) {
+    // Hide the menu
+    document.getElementById('mainMenu').style.display = 'none';
+  } else {
+    // Show the menu on other pages
+    document.getElementById('mainMenu').style.display = 'block';
+  }
+});
 </script>

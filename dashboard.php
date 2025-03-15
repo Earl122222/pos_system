@@ -8,6 +8,7 @@ checkAdminOrUserLogin();
 $categorySql = "SELECT COUNT(*) FROM pos_category WHERE category_status = 'Active'";
 $productSql = "SELECT COUNT(*) FROM pos_product";
 $userSql = "SELECT COUNT(*) FROM pos_user";
+$branchSql = "SELECT COUNT(*) FROM pos_branch WHERE status = 'Active'";
 $orderSql = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'User' ?
     "SELECT SUM(order_total) FROM pos_order WHERE order_created_by = '" . $_SESSION['user_id'] . "'" :
     "SELECT SUM(order_total) FROM pos_order";
@@ -23,6 +24,10 @@ $total_product = $stmt->fetchColumn();
 $stmt = $pdo->prepare($userSql);
 $stmt->execute();
 $total_user = $stmt->fetchColumn();
+
+$stmt = $pdo->prepare($branchSql);
+$stmt->execute();
+$total_branch = $stmt->fetchColumn();
 
 $stmt = $pdo->prepare($orderSql);
 $stmt->execute();
@@ -77,9 +82,19 @@ include('header.php');
 
         <div class="stat-card">
             <div class="stat-card-header">
+                <div class="stat-card-title">Total Branches</div>
+                <div class="stat-card-icon">
+                    <i class="fas fa-store"></i>
+                </div>
+            </div>
+            <div class="stat-card-value"><?php echo $total_branch; ?></div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-header">
                 <div class="stat-card-title">Total Revenue</div>
                 <div class="stat-card-icon">
-                    <i class="fas fa-dollar-sign"></i>
+                    <i class="fas fa-peso-sign"></i>
                 </div>
             </div>
             <div class="stat-card-value"><?php echo $confData['currency'] . number_format(floatval($total_sales), 2); ?></div>

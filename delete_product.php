@@ -1,27 +1,26 @@
 <?php
 
 require_once 'db_connect.php';
+require_once 'product_functions.php';
+require_once 'auth_function.php';
 
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['id'])) {
-    $product_id = $_POST['id'];
+// Check admin login
+checkAdminLogin();
 
-    // Check if product exists
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM pos_product WHERE product_id = ?");
-    $stmt->execute([$product_id]);
-    $count = $stmt->fetchColumn();
+// Validate request
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['id']) || !is_numeric($_POST['id'])) {
+    echo 'Invalid request';
+    exit;
+}
 
-    if ($count > 0) {
-        // Delete product
-        $stmt = $pdo->prepare("DELETE FROM pos_product WHERE product_id = ?");
-        if ($stmt->execute([$product_id])) {
-            echo "Product deleted successfully.";
-        } else {
-            echo "Error deleting product.";
-        }
-    } else {
-        echo "Product not found.";
-    }
+$product_id = (int)$_POST['id'];
+
+// Delete the product
+$result = deleteProduct($pdo, $product_id);
+
+if ($result['status'] === 'success') {
+    echo 'Product deleted successfully';
 } else {
-    echo "Invalid request.";
+    echo 'Error deleting product: ' . $result['message'];
 }
 ?>

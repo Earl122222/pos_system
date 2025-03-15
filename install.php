@@ -130,6 +130,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     product_name VARCHAR(255) NOT NULL,
                     product_image VARCHAR(100) NOT NULL,
                     product_price DECIMAL(10, 2) NOT NULL,
+                    description TEXT,
+                    ingredients TEXT,
                     product_status ENUM('Available', 'Out of Stock') NOT NULL,
                     FOREIGN KEY (category_id) REFERENCES pos_category(category_id)
                 )",
@@ -137,6 +139,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     order_id INT AUTO_INCREMENT PRIMARY KEY,
                     order_number VARCHAR(255) UNIQUE NOT NULL,
                     order_total DECIMAL(10, 2) NOT NULL,
+                    order_subtotal DECIMAL(10, 2) NOT NULL,
+                    order_tax DECIMAL(10, 2) DEFAULT 0,
+                    order_discount DECIMAL(10, 2) DEFAULT 0,
+                    discount_type ENUM('none', 'senior', 'pwd') DEFAULT 'none',
+                    payment_method ENUM('cash', 'credit_card', 'e_wallet') DEFAULT 'cash',
+                    service_type ENUM('dine-in', 'takeout', 'delivery') DEFAULT 'dine-in',
+                    order_status ENUM('completed', 'cancelled', 'refunded') DEFAULT 'completed',
                     order_datetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     order_created_by INT,
                     FOREIGN KEY (order_created_by) REFERENCES pos_user(user_id)
@@ -144,10 +153,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 "CREATE TABLE IF NOT EXISTS pos_order_item (
                     order_item_id INT AUTO_INCREMENT PRIMARY KEY,
                     order_id INT,
-                    product_name varchar(100) NOT NULL,
+                    product_id INT,
                     product_qty INT NOT NULL,
                     product_price DECIMAL(10, 2) NOT NULL,
-                    FOREIGN KEY (order_id) REFERENCES pos_order(order_id)
+                    item_total DECIMAL(10, 2) NOT NULL,
+                    FOREIGN KEY (order_id) REFERENCES pos_order(order_id),
+                    FOREIGN KEY (product_id) REFERENCES pos_product(product_id)
                 )",
                 "CREATE TABLE IF NOT EXISTS pos_configuration (
                     config_id INT AUTO_INCREMENT PRIMARY KEY,

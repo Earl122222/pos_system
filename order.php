@@ -40,6 +40,25 @@ include('header.php');
     </div>
 </div>
 
+<!-- Add this modal HTML before the closing body tag -->
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="receiptModalLabel">Print Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" id="receiptContent">
+                <!-- Receipt content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="printReceipt()">Print</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?php
 include('footer.php');
 ?>
@@ -55,7 +74,6 @@ $(document).ready(function() {
         },
         "columns": [
             { "data": "order_number" },
-            //{ "data": "order_total" },
             {
                 "data" : null,
                 "render" : function(data, type, row){
@@ -69,8 +87,12 @@ $(document).ready(function() {
                 "render" : function(data, type, row){
                     return `
                     <div class="text-center">
-                        <a href="print_order.php?id=${row.order_id}" class="btn btn-warning btn-sm" target="_blank">PDF</a>
-                        <button type="button" class="btn btn-danger btn-sm btn_delete" data-id="${row.order_id}">X</button>
+                        <button type="button" class="btn btn-warning btn-sm" onclick="showReceipt(${row.order_id})">
+                            <i class="fas fa-print"></i>
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm btn_delete" data-id="${row.order_id}">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>`;
                 }
             }
@@ -90,6 +112,27 @@ $(document).ready(function() {
             });
         }
     });
-    
 });
+
+function showReceipt(orderId) {
+    // Load receipt content via AJAX
+    $.get('get_receipt.php', { id: orderId }, function(response) {
+        $('#receiptContent').html(response);
+        var receiptModal = new bootstrap.Modal(document.getElementById('receiptModal'));
+        receiptModal.show();
+    });
+}
+
+function printReceipt() {
+    var printContents = document.getElementById('receiptContent').innerHTML;
+    var originalContents = document.body.innerHTML;
+
+    document.body.innerHTML = printContents;
+    window.print();
+    document.body.innerHTML = originalContents;
+    
+    // Reinitialize the modal and DataTable after printing
+    var receiptModal = new bootstrap.Modal(document.getElementById('receiptModal'));
+    $('#orderTable').DataTable();
+}
 </script>
