@@ -11,7 +11,7 @@ try {
                 COUNT(p.product_id) as product_count
             FROM pos_category c
             LEFT JOIN pos_product p ON c.category_id = p.category_id
-            WHERE c.category_status = 'Active'
+            WHERE c.status = 'active'
             AND (p.product_status = 'Active' OR p.product_status IS NULL)
             GROUP BY c.category_id, c.category_name
             ORDER BY product_count DESC

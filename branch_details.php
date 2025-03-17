@@ -203,6 +203,57 @@ include('header.php');
     outline: none;
     box-shadow: 0 0 0 0.2rem rgba(139, 69, 67, 0.25);
 }
+
+/* SweetAlert2 Custom Styles */
+.swal2-popup {
+    border-radius: 1rem;
+    padding: 2rem;
+}
+
+.swal2-title {
+    color: var(--text-dark);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.swal2-html-container {
+    color: #6c757d;
+    font-size: 1rem;
+    margin: 1rem 0;
+}
+
+.swal2-icon {
+    border-color: var(--warning-color);
+    color: var(--warning-color);
+}
+
+.swal2-confirm {
+    background-color: var(--danger-color) !important;
+    border-radius: 0.75rem !important;
+    padding: 0.75rem 1.5rem !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(179, 58, 58, 0.15) !important;
+}
+
+.swal2-confirm:focus {
+    box-shadow: 0 0 0 0.25rem rgba(179, 58, 58, 0.25) !important;
+}
+
+.swal2-cancel {
+    background-color: #f8f9fa !important;
+    color: var(--text-dark) !important;
+    border-radius: 0.75rem !important;
+    padding: 0.75rem 1.5rem !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    margin-right: 0.5rem !important;
+}
+
+.swal2-cancel:hover {
+    background-color: #e9ecef !important;
+}
 </style>
 
 <script>
@@ -252,24 +303,74 @@ $(document).ready(function() {
     // Handle Delete Button Click
     $(document).on('click', '.delete-btn', function() {
         let branchId = $(this).data('id');
-        if (confirm("Are you sure you want to delete this branch?")) {
-            $.ajax({
-                url: 'delete_branch.php',
-                type: 'POST',
-                data: { id: branchId },
-                success: function(response) {
-                    if (response.success) {
-                        alert('Branch deleted successfully');
-                        $('#branchTable').DataTable().ajax.reload();
-                    } else {
-                        alert('Error: ' + response.message);
+        
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this! All associated data will be permanently removed.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#B33A3A',
+            cancelButtonColor: '#f8f9fa',
+            confirmButtonText: '<i class="fas fa-trash me-2"></i>Yes, delete it!',
+            cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel',
+            customClass: {
+                confirmButton: 'btn btn-danger btn-lg',
+                cancelButton: 'btn btn-light btn-lg'
+            },
+            buttonsStyling: false,
+            padding: '2rem',
+            width: 400,
+            showClass: {
+                popup: 'animate__animated animate__fadeInDown animate__faster'
+            },
+            hideClass: {
+                popup: 'animate__animated animate__fadeOutUp animate__faster'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: 'delete_branch.php',
+                    type: 'POST',
+                    data: { id: branchId },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            $('#branchTable').DataTable().ajax.reload();
+                            
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Deleted!',
+                                text: 'Branch has been deleted successfully.',
+                                timer: 2000,
+                                showConfirmButton: false,
+                                customClass: {
+                                    popup: 'animate__animated animate__fadeInDown animate__faster'
+                                }
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: response.message || 'Failed to delete branch.',
+                                customClass: {
+                                    popup: 'animate__animated animate__fadeInDown animate__faster'
+                                }
+                            });
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: 'An error occurred while deleting the branch.',
+                            customClass: {
+                                popup: 'animate__animated animate__fadeInDown animate__faster'
+                            }
+                        });
                     }
-                },
-                error: function() {
-                    alert('An error occurred while deleting the branch');
-                }
-            });
-        }
+                });
+            }
+        });
     });
 });
 </script>

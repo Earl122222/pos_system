@@ -40,7 +40,6 @@ try {
         $upload_name = 'product_' . time() . '.' . $ext;
         $upload_path = 'uploads/products/' . $upload_name;
         
-        // Create directory if it doesn't exist
         if (!file_exists('uploads/products')) {
             mkdir('uploads/products', 0777, true);
         }
@@ -52,7 +51,7 @@ try {
         $product_image = $upload_path;
     }
 
-    // Insert into database
+    // Insert into pos_product table
     $stmt = $pdo->prepare("
         INSERT INTO pos_product (
             category_id,
@@ -85,9 +84,12 @@ try {
         'product_status' => $_POST['product_status']
     ]);
 
+    $product_id = $pdo->lastInsertId();
+
     echo json_encode([
         'success' => true,
-        'message' => 'Product added successfully'
+        'message' => 'Product added successfully',
+        'product_id' => $product_id
     ]);
 
 } catch (Exception $e) {

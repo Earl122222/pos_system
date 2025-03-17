@@ -271,6 +271,57 @@ h1 {
     font-weight: 400;
     margin-bottom: 1.5rem;
 }
+
+/* SweetAlert2 Custom Styles */
+.swal2-popup {
+    border-radius: 1rem;
+    padding: 2rem;
+}
+
+.swal2-title {
+    color: var(--text-dark);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.swal2-html-container {
+    color: #6c757d;
+    font-size: 1rem;
+    margin: 1rem 0;
+}
+
+.swal2-icon {
+    border-color: var(--warning-color);
+    color: var(--warning-color);
+}
+
+.swal2-confirm {
+    background-color: var(--danger-color) !important;
+    border-radius: 0.75rem !important;
+    padding: 0.75rem 1.5rem !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(179, 58, 58, 0.15) !important;
+}
+
+.swal2-confirm:focus {
+    box-shadow: 0 0 0 0.25rem rgba(179, 58, 58, 0.25) !important;
+}
+
+.swal2-cancel {
+    background-color: #f8f9fa !important;
+    color: var(--text-dark) !important;
+    border-radius: 0.75rem !important;
+    padding: 0.75rem 1.5rem !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    margin-right: 0.5rem !important;
+}
+
+.swal2-cancel:hover {
+    background-color: #e9ecef !important;
+}
 </style>
 
 <div class="container-fluid px-4">
@@ -455,17 +506,75 @@ $(document).ready(function() {
     // Handle Delete Button Click
     $(document).on('click', '.delete-btn', function() {
         let userId = $(this).data('id');
-        if (confirm("Are you sure you want to delete this user?")) {
-            $.ajax({
-                url: 'delete_user.php',
-                type: 'POST',
-                data: { id: userId },
-                success: function(response) {
-                    alert(response);
-                    $('#userTable').DataTable().ajax.reload();
-                }
-            });
-        }
+        
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#B33A3A',
+            cancelButtonColor: '#f8f9fa',
+            confirmButtonText: '<i class="fas fa-trash me-2"></i>Yes, delete it!',
+            cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel',
+            customClass: {
+                confirmButton: 'btn btn-danger btn-lg',
+                cancelButton: 'btn btn-light btn-lg'
+            },
+            buttonsStyling: false,
+            padding: '2rem',
+            width: 400,
+            showClass: {
+                popup: 'animate__animated animate__fadeInDown animate__faster'
+            },
+            hideClass: {
+                popup: 'animate__animated animate__fadeOutUp animate__faster'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: 'delete_user.php',
+                    type: 'POST',
+                    data: { id: userId },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            // Reload the table or remove the row
+                            $('#userTable').DataTable().ajax.reload();
+                            
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Deleted!',
+                                text: 'User has been deleted successfully.',
+                                timer: 2000,
+                                showConfirmButton: false,
+                                customClass: {
+                                    popup: 'animate__animated animate__fadeInDown animate__faster'
+                                }
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: response.message || 'Failed to delete user.',
+                                customClass: {
+                                    popup: 'animate__animated animate__fadeInDown animate__faster'
+                                }
+                            });
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: 'An error occurred while deleting the user.',
+                            customClass: {
+                                popup: 'animate__animated animate__fadeInDown animate__faster'
+                            }
+                        });
+                    }
+                });
+            }
+        });
     });
 });
 </script>
