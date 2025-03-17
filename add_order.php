@@ -6,7 +6,7 @@ require_once 'auth_function.php';
 checkOrderAccess();
 
 // Fetch category for the dropdown
-$categorys = $pdo->query("SELECT category_id, category_name FROM pos_category WHERE category_status = 'Active'")->fetchAll(PDO::FETCH_ASSOC);
+$categorys = $pdo->query("SELECT category_id, category_name FROM pos_category WHERE status = 'active'")->fetchAll(PDO::FETCH_ASSOC);
 
 $confData = getConfigData($pdo);
 

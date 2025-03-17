@@ -80,6 +80,30 @@ try {
         }
     }
 
+    // Create pos_category table if it doesn't exist
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS pos_category (
+            category_id INT PRIMARY KEY AUTO_INCREMENT,
+            category_name VARCHAR(100) NOT NULL,
+            description TEXT,
+            status ENUM('active', 'inactive') DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ");
+
+    // Insert some default categories if the table is empty
+    $stmt = $pdo->query("SELECT COUNT(*) FROM pos_category");
+    if ($stmt->fetchColumn() == 0) {
+        $pdo->exec("
+            INSERT INTO pos_category (category_name, description, status) VALUES
+            ('Beverages', 'Drinks and refreshments', 'active'),
+            ('Main Course', 'Primary dishes and entrees', 'active'),
+            ('Desserts', 'Sweet treats and desserts', 'active'),
+            ('Appetizers', 'Starters and small plates', 'active'),
+            ('Side Dishes', 'Complementary dishes', 'active')
+        ");
+    }
+
     echo "\nDatabase structure updated successfully!";
 
 } catch (Exception $e) {

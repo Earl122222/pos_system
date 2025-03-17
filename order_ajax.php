@@ -117,6 +117,20 @@ if(isset($input['order_number'])) {
             }, 0);
         }
         
+        // Get cashier's active session and branch
+        $stmt = $pdo->prepare("
+            SELECT cs.session_id, cs.branch_id 
+            FROM pos_cashier_sessions cs 
+            WHERE cs.user_id = ? AND cs.is_active = TRUE 
+            ORDER BY cs.login_time DESC LIMIT 1
+        ");
+        $stmt->execute([$_SESSION['user_id']]);
+        $session = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$session) {
+            throw new Exception('No active cashier session found. Please login to your POS terminal first.');
+        }
+
         // Prepare to insert order into pos_order table with enhanced fields
         $stmt = $pdo->prepare("INSERT INTO pos_order (
             order_number, 
@@ -128,8 +142,11 @@ if(isset($input['order_number'])) {
             payment_method,
             service_type,
             order_created_by,
-            order_datetime
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
+            branch_id,
+            order_datetime,
+            completed_at,
+            status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'completed')");
 
         // Execute with parameters
         $stmt->execute([
@@ -141,7 +158,8 @@ if(isset($input['order_number'])) {
             $discount_type,
             $payment_method,
             $service_type,
-            $_SESSION['user_id']
+            $_SESSION['user_id'],
+            $session['branch_id']
         ]);
 
         // Get the last inserted order_id

@@ -16,7 +16,10 @@ function requireLogin() {
 function redirectIfLoggedIn() {
     if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) {
         if ($_SESSION['user_type'] === 'Cashier') {
-            header('Location: sales.php');
+            // Check if there's a stored redirect URL
+            $redirect = isset($_SESSION['redirect_url']) ? $_SESSION['redirect_url'] : 'sales.php';
+            unset($_SESSION['redirect_url']); // Clear the stored URL
+            header('Location: ' . $redirect);
         } else {
             header('Location: dashboard.php');
         }
@@ -52,14 +55,64 @@ function checkAdminOrUserLogin() {
 
 // Function to check if user is a cashier
 function checkCashierLogin() {
-    requireLogin();
-    if ($_SESSION['user_type'] !== 'Cashier') {
-        if ($_SESSION['user_type'] === 'Admin') {
-            header('Location: dashboard.php');
-        } else {
-            header('Location: add_order.php');
+    // First check if user is logged in and is a cashier
+    if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_type']) || $_SESSION['user_type'] !== 'Cashier') {
+        $_SESSION['redirect_url'] = $_SERVER['PHP_SELF'];
+        header('Location: login.php');
+        exit();
+    }
+
+    global $pdo;
+    
+    try {
+        // Check for active session
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) 
+            FROM pos_cashier_sessions 
+            WHERE user_id = ? AND is_active = TRUE
+        ");
+        $stmt->execute([$_SESSION['user_id']]);
+        $hasActiveSession = $stmt->fetchColumn() > 0;
+
+        if (!$hasActiveSession) {
+            // Get cashier's branch
+            $stmt = $pdo->prepare("
+                SELECT branch_id 
+                FROM pos_cashier_details 
+                WHERE user_id = ?
+            ");
+            $stmt->execute([$_SESSION['user_id']]);
+            $cashier = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$cashier) {
+                // Instead of redirecting, just return false
+                $_SESSION['error'] = 'Cashier not assigned to any branch';
+                return false;
+            }
+
+            // End any existing active sessions
+            $stmt = $pdo->prepare("
+                UPDATE pos_cashier_sessions 
+                SET is_active = FALSE, logout_time = CURRENT_TIMESTAMP 
+                WHERE user_id = ? AND is_active = TRUE
+            ");
+            $stmt->execute([$_SESSION['user_id']]);
+
+            // Create new session
+            $stmt = $pdo->prepare("
+                INSERT INTO pos_cashier_sessions (user_id, branch_id, login_time, is_active) 
+                VALUES (?, ?, CURRENT_TIMESTAMP, TRUE)
+            ");
+            if (!$stmt->execute([$_SESSION['user_id'], $cashier['branch_id']])) {
+                $_SESSION['error'] = 'Failed to create cashier session';
+                return false;
+            }
         }
-        exit;
+        return true;
+    } catch (PDOException $e) {
+        error_log('Error in checkCashierLogin: ' . $e->getMessage());
+        $_SESSION['error'] = 'Database error occurred. Please try again.';
+        return false;
     }
 }
 
@@ -100,6 +153,43 @@ function getCategoryName($pdo, $category_id) {
         return $stmt->fetchColumn();
     } catch (PDOException $e) {
         return '';
+    }
+}
+
+function createCashierSession($pdo, $user_id) {
+    try {
+        // Get cashier's branch
+        $stmt = $pdo->prepare("
+            SELECT branch_id 
+            FROM pos_cashier_details 
+            WHERE user_id = ?
+        ");
+        $stmt->execute([$user_id]);
+        $cashier = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$cashier) {
+            throw new Exception('Cashier not assigned to any branch');
+        }
+
+        // End any existing active sessions
+        $stmt = $pdo->prepare("
+            UPDATE pos_cashier_sessions 
+            SET is_active = FALSE, logout_time = CURRENT_TIMESTAMP 
+            WHERE user_id = ? AND is_active = TRUE
+        ");
+        $stmt->execute([$user_id]);
+
+        // Create new session
+        $stmt = $pdo->prepare("
+            INSERT INTO pos_cashier_sessions (user_id, branch_id, login_time, is_active) 
+            VALUES (?, ?, CURRENT_TIMESTAMP, TRUE)
+        ");
+        $stmt->execute([$user_id, $cashier['branch_id']]);
+
+        return true;
+    } catch (Exception $e) {
+        error_log('Error creating cashier session: ' . $e->getMessage());
+        return false;
     }
 }
 

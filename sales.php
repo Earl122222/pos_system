@@ -2,7 +2,37 @@
 require_once 'db_connect.php';
 require_once 'auth_function.php';
 
-checkCashierLogin();
+// Check if user is logged in as cashier and has an active session
+if (!checkCashierLogin()) {
+    // If no active session, but they're logged in, show error
+    if (isset($_SESSION['error'])) {
+        $error_message = $_SESSION['error'];
+        unset($_SESSION['error']);
+        // Display error in a user-friendly way
+        ?>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Session Error</title>
+            <link href="asset/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+        </head>
+        <body>
+            <div class="container mt-5">
+                <div class="alert alert-danger">
+                    <h4>Error</h4>
+                    <p><?php echo htmlspecialchars($error_message); ?></p>
+                    <a href="logout.php" class="btn btn-primary">Return to Login</a>
+                </div>
+            </div>
+        </body>
+        </html>
+        <?php
+        exit();
+    }
+    // If not logged in at all, redirect to login
+    header('Location: login.php');
+    exit();
+}
 
 $confData = getConfigData($pdo);
 

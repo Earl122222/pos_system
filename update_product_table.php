@@ -1,24 +1,19 @@
 <?php
 require_once 'db_connect.php';
+require_once 'auth_function.php';
+
+checkAdminLogin();
 
 try {
-    // Check if columns exist
-    $stmt = $pdo->query("SHOW COLUMNS FROM pos_product LIKE 'description'");
-    $descriptionExists = $stmt->fetch();
+    // Remove current_stock and minimum_stock columns from pos_product table
+    $sql = "ALTER TABLE pos_product 
+            DROP COLUMN IF EXISTS current_stock,
+            DROP COLUMN IF EXISTS minimum_stock";
     
-    $stmt = $pdo->query("SHOW COLUMNS FROM pos_product LIKE 'ingredients'");
-    $ingredientsExists = $stmt->fetch();
+    $pdo->exec($sql);
     
-    // Add columns if they don't exist
-    if (!$descriptionExists) {
-        $pdo->exec("ALTER TABLE pos_product ADD COLUMN description TEXT AFTER product_image");
-    }
+    echo "Successfully removed stock columns from product table!";
     
-    if (!$ingredientsExists) {
-        $pdo->exec("ALTER TABLE pos_product ADD COLUMN ingredients TEXT AFTER description");
-    }
-    
-    echo "Database updated successfully!";
 } catch (PDOException $e) {
-    echo "Error updating database: " . $e->getMessage();
+    echo "Error updating table structure: " . $e->getMessage();
 } 

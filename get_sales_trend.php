@@ -7,69 +7,92 @@ checkAdminLogin();
 header('Content-Type: application/json');
 
 try {
-    $period = isset($_GET['period']) ? $_GET['period'] : 'daily';
-    $branch = isset($_GET['branch']) ? $_GET['branch'] : 'main';
-
-    // Initialize response arrays
+    $period = $_GET['period'] ?? 'daily';
     $labels = [];
     $data = [];
 
-    // Set the date format and range based on period
-    switch($period) {
-        case 'monthly':
-            $date_format = '%Y-%m';
-            $interval = 'INTERVAL 12 MONTH';
-            $group_by = "DATE_FORMAT(o.order_datetime, '%Y-%m')";
+    switch ($period) {
+        case 'daily':
+            // Get hourly sales for today
+            $sql = "SELECT 
+                        HOUR(created_at) as hour,
+                        COALESCE(SUM(total_amount), 0) as total
+                    FROM pos_orders 
+                    WHERE DATE(created_at) = CURDATE()
+                    AND status = 'Completed'
+                    GROUP BY HOUR(created_at)
+                    ORDER BY HOUR(created_at)";
+
+            $stmt = $pdo->query($sql);
+            
+            // Initialize all hours with 0
+            for ($i = 0; $i < 24; $i++) {
+                $labels[] = sprintf("%02d:00", $i);
+                $data[$i] = 0;
+            }
+
+            // Fill in actual data
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $data[$row['hour']] = floatval($row['total']);
+            }
             break;
+
         case 'weekly':
-            $date_format = '%Y-%u';
-            $interval = 'INTERVAL 12 WEEK';
-            $group_by = "DATE_FORMAT(o.order_datetime, '%Y-%u')";
+            // Get daily sales for the past week
+            $sql = "SELECT 
+                        DATE(created_at) as date,
+                        COALESCE(SUM(total_amount), 0) as total
+                    FROM pos_orders 
+                    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+                    AND status = 'Completed'
+                    GROUP BY DATE(created_at)
+                    ORDER BY DATE(created_at)";
+
+            $stmt = $pdo->query($sql);
+
+            // Get the past 7 days
+            for ($i = 6; $i >= 0; $i--) {
+                $date = date('Y-m-d', strtotime("-$i days"));
+                $labels[] = date('M d', strtotime($date));
+                $data[$date] = 0;
+            }
+
+            // Fill in actual data
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $data[$row['date']] = floatval($row['total']);
+            }
             break;
-        default: // daily
-            $date_format = '%Y-%m-%d';
-            $interval = 'INTERVAL 30 DAY';
-            $group_by = "DATE(o.order_datetime)";
+
+        case 'monthly':
+            // Get monthly sales for the past 6 months
+            $sql = "SELECT 
+                        DATE_FORMAT(created_at, '%Y-%m') as month,
+                        COALESCE(SUM(total_amount), 0) as total
+                    FROM pos_orders 
+                    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
+                    AND status = 'Completed'
+                    GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+                    ORDER BY month";
+
+            $stmt = $pdo->query($sql);
+
+            // Get the past 6 months
+            for ($i = 5; $i >= 0; $i--) {
+                $month = date('Y-m', strtotime("-$i months"));
+                $labels[] = date('M Y', strtotime($month));
+                $data[$month] = 0;
+            }
+
+            // Fill in actual data
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $data[$row['month']] = floatval($row['total']);
+            }
             break;
-    }
-
-    // Get sales data
-    $sql = "
-        SELECT 
-            $group_by as date_group,
-            SUM(o.order_total) as total_sales
-        FROM pos_order o
-        WHERE o.order_datetime >= DATE_SUB(CURRENT_DATE, $interval)
-        GROUP BY date_group
-        ORDER BY date_group ASC
-    ";
-
-    $stmt = $pdo->query($sql);
-    $sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Format data based on period
-    foreach ($sales_data as $row) {
-        switch($period) {
-            case 'monthly':
-                $date = date('M Y', strtotime($row['date_group'] . '-01'));
-                break;
-            case 'weekly':
-                $year = substr($row['date_group'], 0, 4);
-                $week = substr($row['date_group'], 5);
-                $date = "Week $week, $year";
-                break;
-            default:
-                $date = date('M d', strtotime($row['date_group']));
-                break;
-        }
-        
-        $labels[] = $date;
-        $data[] = floatval($row['total_sales']);
     }
 
     echo json_encode([
         'labels' => $labels,
-        'data' => $data
+        'data' => array_values($data)
     ]);
 
 } catch (Exception $e) {

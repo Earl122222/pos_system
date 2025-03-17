@@ -3,9 +3,9 @@
 require_once 'db_connect.php';
 require_once 'auth_function.php';
 
-checkAdminOrUserLogin();
+checkAdminLogin();
 
-$categorySql = "SELECT COUNT(*) FROM pos_category WHERE category_status = 'Active'";
+$categorySql = "SELECT COUNT(*) FROM pos_category WHERE status = 'active'";
 $productSql = "SELECT COUNT(*) FROM pos_product";
 $userSql = "SELECT COUNT(*) FROM pos_user";
 $branchSql = "SELECT COUNT(*) FROM pos_branch WHERE status = 'Active'";
@@ -37,97 +37,328 @@ $total_sales = $stmt->fetchColumn();
 $categories = $pdo->query("SELECT c.category_name, COUNT(p.product_id) AS total 
                            FROM pos_category c 
                            LEFT JOIN pos_product p ON c.category_id = p.category_id 
-                           WHERE c.category_status = 'Active'
+                           WHERE c.status = 'active'
                            GROUP BY c.category_name")
                   ->fetchAll(PDO::FETCH_ASSOC);
 
 $confData = getConfigData($pdo);
 
+// Get initial data
+$stmt = $pdo->query("SELECT COUNT(*) FROM pos_user WHERE user_type = 'Cashier' AND user_status = 'Active'");
+$total_cashiers = $stmt->fetchColumn();
+
 include('header.php');
 ?>
 
 <div class="container-fluid px-4">
-    <h1 class="mb-4">Dashboard Overview</h1>
-    
-    <div class="stats-cards">
-        <div class="stat-card">
-            <div class="stat-card-header">
-                <div class="stat-card-title">Total Categories</div>
-                <div class="stat-card-icon">
-                    <i class="fas fa-building"></i>
+    <h1 class="mt-4" style="color: #8B4543; font-size: 1.25rem; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-weight: 500; background-color: #F8F9FA; padding: 1rem;">
+        | Dashboard Overview
+    </h1>
+
+    <!-- Stats Cards Row -->
+    <div class="row mb-4">
+        <!-- Total Categories -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card bg-gradient-primary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white mb-1">Total Categories</h6>
+                            <h3 class="text-white mb-0" id="totalCategories">0</h3>
+                        </div>
+                        <div class="stats-icon">
+                            <i class="fas fa-th-list"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="category.php" class="text-white text-sm">View Details <i class="fas fa-arrow-right ms-1"></i></a>
+                    </div>
                 </div>
             </div>
-            <div class="stat-card-value"><?php echo $total_category; ?></div>
         </div>
 
-        <div class="stat-card">
-            <div class="stat-card-header">
-                <div class="stat-card-title">Total Products</div>
-                <div class="stat-card-icon">
-                    <i class="fas fa-box"></i>
+        <!-- Total Products -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card bg-gradient-success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white mb-1">Total Products</h6>
+                            <h3 class="text-white mb-0" id="totalProducts">0</h3>
+                        </div>
+                        <div class="stats-icon">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="product.php" class="text-white text-sm">View Details <i class="fas fa-arrow-right ms-1"></i></a>
+                    </div>
                 </div>
             </div>
-            <div class="stat-card-value"><?php echo $total_product; ?></div>
         </div>
 
-        <div class="stat-card">
-            <div class="stat-card-header">
-                <div class="stat-card-title">Total Users</div>
-                <div class="stat-card-icon">
-                    <i class="fas fa-users"></i>
+        <!-- Total Branches -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card bg-gradient-warning h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white mb-1">Total Branches</h6>
+                            <h3 class="text-white mb-0" id="totalBranches">0</h3>
+                        </div>
+                        <div class="stats-icon">
+                            <i class="fas fa-store"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="branch_details.php" class="text-white text-sm">View Details <i class="fas fa-arrow-right ms-1"></i></a>
+                    </div>
                 </div>
             </div>
-            <div class="stat-card-value"><?php echo $total_user; ?></div>
         </div>
 
-        <div class="stat-card">
-            <div class="stat-card-header">
-                <div class="stat-card-title">Total Branches</div>
-                <div class="stat-card-icon">
-                    <i class="fas fa-store"></i>
+        <!-- Total Revenue -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card bg-gradient-info h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white mb-1">Total Revenue</h6>
+                            <h3 class="text-white mb-0" id="totalRevenue">₱0.00</h3>
+                        </div>
+                        <div class="stats-icon">
+                            <i class="fas fa-peso-sign"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="sales_report.php" class="text-white text-sm">View Details <i class="fas fa-arrow-right ms-1"></i></a>
+                    </div>
                 </div>
             </div>
-            <div class="stat-card-value"><?php echo $total_branch; ?></div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-card-header">
-                <div class="stat-card-title">Total Revenue</div>
-                <div class="stat-card-icon">
-                    <i class="fas fa-peso-sign"></i>
-                </div>
-            </div>
-            <div class="stat-card-value"><?php echo $confData['currency'] . number_format(floatval($total_sales), 2); ?></div>
         </div>
     </div>
 
-    <div class="charts-section">
-        <div class="chart-card">
-            <div class="chart-header">
-                <h2 class="chart-title">Most Purchased Products</h2>
-                <div class="chart-filters">
-                    <select id="periodFilter" class="form-select">
-                        <option value="day">Daily</option>
-                        <option value="month">Monthly</option>
-                        <option value="year">Yearly</option>
+    <!-- Cashier Performance Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">Cashier Performance</h5>
+                        <p class="text-muted mb-0">Active cashiers and their performance metrics</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <select class="form-select form-select-sm" id="cashierPeriod">
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
                     </select>
-                    <input type="date" id="dateFilter" class="form-control" value="<?php echo date('Y-m-d'); ?>">
+                        <button class="btn btn-sm btn-primary" id="refreshCashierStats">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-4">
+                        <!-- Active Cashiers Card -->
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Active Cashiers</h6>
+                                        <h4 class="mb-0" id="activeCashiers">0</h4>
+                                    </div>
+                                    <div class="rounded-circle p-3 bg-white">
+                                        <i class="fas fa-user-clock text-primary"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Total Transactions Card -->
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Total Transactions</h6>
+                                        <h4 class="mb-0" id="totalTransactions">0</h4>
+                                    </div>
+                                    <div class="rounded-circle p-3 bg-white">
+                                        <i class="fas fa-receipt text-success"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Average Transaction Time Card -->
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Avg. Transaction Time</h6>
+                                        <h4 class="mb-0" id="avgTransactionTime">0m</h4>
+                                    </div>
+                                    <div class="rounded-circle p-3 bg-white">
+                                        <i class="fas fa-clock text-warning"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Total Sales Card -->
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Total Sales</h6>
+                                        <h4 class="mb-0" id="totalCashierSales">₱0.00</h4>
+                                    </div>
+                                    <div class="rounded-circle p-3 bg-white">
+                                        <i class="fas fa-peso-sign text-info"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cashier Performance Table -->
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="cashierPerformanceTable">
+                            <thead>
+                                <tr>
+                                    <th>Cashier Name</th>
+                                    <th>Branch</th>
+                                    <th>Transactions</th>
+                                    <th>Sales</th>
+                                    <th>Avg. Transaction Time</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dynamically populated -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-            <div class="chart-body">
-                <div class="chart-container">
-                    <canvas id="productsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Sales Trend Chart -->
+        <div class="col-xl-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">Sales Trend</h5>
+                        <p class="text-muted mb-0">Overview of sales performance</p>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-outline-secondary period-selector active" data-period="daily">Daily</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary period-selector" data-period="weekly">Weekly</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary period-selector" data-period="monthly">Monthly</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="salesTrendChart" height="300"></canvas>
                 </div>
             </div>
         </div>
 
-        <div class="chart-card">
-            <div class="chart-header">
-                <h2 class="chart-title">Product Distribution</h2>
+        <!-- Product Distribution Chart -->
+        <div class="col-xl-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Product Distribution</h5>
+                    <p class="text-muted mb-0">Products by category</p>
+                </div>
+                <div class="card-body">
+                    <canvas id="productDistributionChart" height="300"></canvas>
+                </div>
             </div>
-            <div class="chart-body">
-                <div class="chart-container">
-                    <canvas id="productsPieChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Branch Performance and Inventory Status -->
+    <div class="row">
+        <!-- Branch Performance -->
+        <div class="col-xl-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">Branch Performance</h5>
+                        <p class="text-muted mb-0">Today's sales by branch</p>
+                    </div>
+                    <a href="branch_comparison.php" class="btn btn-sm btn-primary">Compare Branches</a>
+                </div>
+                <div class="card-body">
+                    <canvas id="branchPerformanceChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Status -->
+        <div class="col-xl-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Inventory Status</h5>
+                    <p class="text-muted mb-0">Low stock alerts</p>
+                </div>
+                <div class="card-body">
+                    <canvas id="inventoryStatusChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cashier Details Modal -->
+<div class="modal fade" id="cashierDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cashier Performance Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">Hourly Sales</h6>
+                                <canvas id="cashierHourlySalesChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">Payment Methods</h6>
+                                <canvas id="cashierPaymentMethodsChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">Recent Transactions</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm" id="cashierTransactionsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Order ID</th>
+                                        <th>Items</th>
+                                        <th>Total</th>
+                                        <th>Payment</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamically populated -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -135,284 +366,230 @@ include('header.php');
 </div>
 
 <style>
-.charts-section {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    margin-top: 2rem;
+/* Card Styling */
+.card {
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(139, 69, 67, 0.15);
+    margin-bottom: 1.5rem;
 }
 
-.chart-card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.card-header {
+    background: transparent;
+    border-bottom: 1px solid rgba(139, 69, 67, 0.1);
     padding: 1.5rem;
 }
 
-.chart-header {
-    margin-bottom: 1rem;
+.card-body {
+    padding: 1.5rem;
 }
 
-.chart-title {
-    font-size: 1.25rem;
-    color: #2c3e50;
-    margin: 0;
+/* Stats Card Styling */
+.stats-card {
+    transition: transform 0.2s ease;
 }
 
-.chart-body {
-    position: relative;
-    width: 100%;
-    height: 400px;
+.stats-card:hover {
+    transform: translateY(-5px);
 }
 
-.chart-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-}
-
-.chart-filters {
+.stats-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
     display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
+    align-items: center;
+    justify-content: center;
 }
 
-.chart-filters select,
-.chart-filters input {
-    padding: 0.5rem;
-    border: 1px solid rgba(168, 102, 102, 0.2);
-    border-radius: 8px;
-    font-size: 0.9rem;
-    color: #2c3e50;
-    background-color: white;
-    transition: all 0.3s ease;
+.stats-icon i {
+    font-size: 1.5rem;
+    color: white;
 }
 
-.chart-filters select:focus,
-.chart-filters input:focus {
-    outline: none;
-    border-color: var(--color-600);
-    box-shadow: 0 0 0 2px rgba(168, 102, 102, 0.1);
+/* Gradient Backgrounds */
+.bg-gradient-primary {
+    background: linear-gradient(45deg, #8B4543, #A65D5D);
 }
 
-.chart-filters select:hover,
-.chart-filters input:hover {
-    border-color: var(--color-400);
+.bg-gradient-success {
+    background: linear-gradient(45deg, #4A7C59, #6B9C77);
 }
 
-@media (max-width: 1024px) {
-    .charts-section {
-        grid-template-columns: 1fr;
-    }
-    
-    .chart-body {
-        height: 350px;
-    }
+.bg-gradient-warning {
+    background: linear-gradient(45deg, #C4804D, #E5A06B);
+}
+
+.bg-gradient-info {
+    background: linear-gradient(45deg, #3B7B9E, #5B9BC0);
+}
+
+/* Button Styling */
+.btn-outline-secondary {
+    color: #8B4543;
+    border-color: #8B4543;
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-secondary.active {
+    background-color: #8B4543;
+    border-color: #8B4543;
+    color: white;
+}
+
+.btn-primary {
+    background-color: #8B4543;
+    border-color: #8B4543;
+}
+
+.btn-primary:hover {
+    background-color: #723937;
+    border-color: #723937;
+}
+
+/* Text Styling */
+.text-sm {
+    font-size: 0.875rem;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* Chart Container */
+canvas {
+    max-width: 100%;
+}
+
+/* Additional styles for cashier section */
+.table th {
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cashier-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 50rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-active {
+    background-color: rgba(74, 124, 89, 0.1);
+    color: #4A7C59;
+}
+
+.status-inactive {
+    background-color: rgba(139, 69, 67, 0.1);
+    color: #8B4543;
+}
+
+.modal-header {
+    background-color: #8B4543;
+    color: white;
+}
+
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
 }
 </style>
 
 <script>
-// Register Chart.js plugins
-Chart.register(ChartDataLabels);
+let salesTrendChart = null;
+let productDistributionChart = null;
+let branchPerformanceChart = null;
+let inventoryStatusChart = null;
 
-// Initialize charts as global variables
-let productsChart = null;
-let pieChart = null;
+// Function to format currency
+function formatCurrency(value) {
+    return '₱' + parseFloat(value).toLocaleString('en-PH', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
 
-// Chart configuration
-const chartConfig = {
+// Function to initialize charts
+function initializeCharts() {
+    // Sales Trend Chart
+    const salesTrendCtx = document.getElementById('salesTrendChart').getContext('2d');
+    salesTrendChart = new Chart(salesTrendCtx, {
     type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Sales',
+                data: [],
+                borderColor: '#8B4543',
+                backgroundColor: 'rgba(139, 69, 67, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
     options: {
         responsive: true,
-        maintainAspectRatio: true,
-        scales: {
-            y: {
-                beginAtZero: true,
-                grid: {
-                    color: 'rgba(0, 0, 0, 0.1)',
-                    drawBorder: false
-                },
-                ticks: {
-                    color: '#2c3e50',
-                    font: {
-                        size: 12,
-                        family: 'Inter'
-                    },
-                    callback: function(value) {
-                        return Math.round(value); // Show whole numbers only
-                    }
-                },
-                title: {
-                    display: true,
-                    text: 'Quantity Sold',
-                    color: '#2c3e50',
-                    font: {
-                        size: 14,
-                        family: 'Inter',
-                        weight: 'bold'
-                    }
-                }
-            },
-            x: {
-                grid: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
                     display: false
                 },
-                ticks: {
-                    color: '#2c3e50',
-                    font: {
-                        size: 12,
-                        family: 'Inter'
-                    },
-                    maxRotation: 45,
-                    minRotation: 45
-                }
-            }
-        },
-        plugins: {
-            legend: {
-                display: true,
-                position: 'top',
-                labels: {
-                    color: '#2c3e50',
-                    font: {
-                        size: 12,
-                        family: 'Inter'
-                    },
-                    boxWidth: 15,
-                    usePointStyle: true
-                }
-            },
-            tooltip: {
-                enabled: true,
-                backgroundColor: 'rgba(44, 62, 80, 0.9)',
-                titleFont: {
-                    size: 14,
-                    family: 'Inter',
-                    weight: 'bold'
-                },
-                bodyFont: {
-                    size: 13,
-                    family: 'Inter'
-                },
-                padding: 12,
-                cornerRadius: 8,
-                displayColors: true,
-                callbacks: {
-                    label: function(context) {
-                        return context.dataset.label + ': ' + context.parsed.y + ' units sold';
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return formatCurrency(context.raw);
+                        }
                     }
                 }
             },
-            datalabels: {
-                display: false // Disable datalabels for the line chart
+            scales: {
+                y: {
+                    beginAtZero: true,
+                ticks: {
+                        callback: function(value) {
+                            return formatCurrency(value);
+                        }
+                    }
+                }
             }
-        },
-        interaction: {
-            intersect: false,
-            mode: 'index'
-        },
-        animation: {
-            duration: 750,
-            easing: 'easeInOutQuart'
         }
-    }
-};
+    });
 
-// Function to load product statistics
-function loadProductStats() {
-    const period = document.getElementById('periodFilter').value;
-    const date = document.getElementById('dateFilter').value;
-
-    // Show loading state
-    if (productsChart) {
-        productsChart.data.datasets.forEach(dataset => {
-            dataset.data = dataset.data.map(() => null);
-        });
-        productsChart.update('none');
-    }
-
-    fetch(`get_product_stats.php?period=${period}&start_date=${date}`)
-        .then(response => response.json())
-        .then(data => {
-            if (!productsChart) {
-                // Initial chart creation
-                const ctx = document.getElementById('productsChart').getContext('2d');
-                chartConfig.data = data;
-                productsChart = new Chart(ctx, chartConfig);
-            } else {
-                // Update existing chart
-                productsChart.data.labels = data.labels;
-                productsChart.data.datasets = data.datasets;
-                productsChart.update();
-            }
-        })
-        .catch(error => {
-            console.error('Error loading product stats:', error);
-            if (productsChart) {
-                // Clear data on error
-                productsChart.data.datasets.forEach(dataset => {
-                    dataset.data = [];
-                });
-                productsChart.update();
-            }
-        });
-}
-
-// Debounce function
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// Add debounced event listeners for filters
-const debouncedLoadProductStats = debounce(loadProductStats, 300);
-
-document.getElementById('periodFilter').addEventListener('change', debouncedLoadProductStats);
-document.getElementById('dateFilter').addEventListener('change', debouncedLoadProductStats);
-
-// Initialize charts when document is ready
-document.addEventListener('DOMContentLoaded', function() {
-    // Load initial product stats
-    loadProductStats();
-
-    // Initialize pie chart
-    const categoryLabels = <?php echo json_encode(array_column($categories, 'category_name')); ?>;
-    const categoryData = <?php echo json_encode(array_column($categories, 'total')); ?>;
-    const backgroundColors = [
-        'rgba(231, 76, 60, 0.8)',   // Red
-        'rgba(52, 152, 219, 0.8)',  // Blue
-        'rgba(46, 204, 113, 0.8)',  // Green
-        'rgba(241, 196, 15, 0.8)',  // Yellow
-        'rgba(155, 89, 182, 0.8)',  // Purple
-        'rgba(52, 73, 94, 0.8)',    // Dark Blue
-        'rgba(230, 126, 34, 0.8)',  // Orange
-        'rgba(149, 165, 166, 0.8)'  // Gray
-    ];
-
-    const pieCtx = document.getElementById('productsPieChart').getContext('2d');
-    pieChart = new Chart(pieCtx, {
+    // Product Distribution Chart
+    const productDistributionCtx = document.getElementById('productDistributionChart').getContext('2d');
+    productDistributionChart = new Chart(productDistributionCtx, {
         type: 'doughnut',
         data: {
-            labels: categoryLabels,
+            labels: [],
             datasets: [{
-                label: "Products per Category",
-                data: categoryData,
-                backgroundColor: backgroundColors.slice(0, categoryLabels.length),
-                borderColor: '#ffffff',
-                borderWidth: 2,
-                hoverBackgroundColor: backgroundColors.map(color => color.replace('0.8', '1')),
-                hoverBorderColor: '#ffffff',
-                hoverBorderWidth: 4,
-                hoverOffset: 15
+                data: [],
+                backgroundColor: [
+                    '#8B4543', '#4A7C59', '#C4804D', '#3B7B9E', '#A65D5D'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Branch Performance Chart
+    const branchPerformanceCtx = document.getElementById('branchPerformanceChart').getContext('2d');
+    branchPerformanceChart = new Chart(branchPerformanceCtx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Sales',
+                data: [],
+                backgroundColor: '#8B4543'
             }]
         },
         options: {
@@ -420,70 +597,301 @@ document.addEventListener('DOMContentLoaded', function() {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'right',
-                    labels: {
-                        color: '#2c3e50',
-                        font: {
-                            size: 12,
-                            family: 'Inter'
-                        },
-                        padding: 20,
-                        boxWidth: 15,
-                        usePointStyle: true
-                    }
+                    display: false
                 },
                 tooltip: {
-                    enabled: true,
-                    backgroundColor: 'rgba(44, 62, 80, 0.95)',
-                    titleFont: {
-                        size: 14,
-                        family: 'Inter',
-                        weight: 'bold'
-                    },
-                    bodyFont: {
-                        size: 13,
-                        family: 'Inter'
-                    },
-                    padding: 12,
-                    cornerRadius: 8,
-                    callbacks: {
-                        label: function(context) {
-                            const label = context.label || '';
-                            const value = context.parsed;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = ((value * 100) / total).toFixed(1);
-                            return `${label}: ${value} products (${percentage}%)`;
+                callbacks: {
+                    label: function(context) {
+                            return formatCurrency(context.raw);
                         }
-                    }
-                },
-                datalabels: {
-                    color: '#ffffff',
-                    font: {
-                        weight: 'bold',
-                        size: 11
-                    },
-                    formatter: function(value, context) {
-                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                        const percentage = ((value * 100) / total).toFixed(1);
-                        return percentage + '%';
-                    },
-                    display: function(context) {
-                        return context.dataset.data[context.dataIndex] > 0;
                     }
                 }
             },
-            cutout: '60%',
-            layout: {
-                padding: 20
-            },
-            animation: {
-                animateScale: true,
-                animateRotate: true,
-                duration: 750,
-                easing: 'easeInOutQuart'
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return formatCurrency(value);
+                        }
+                    }
+                }
             }
         }
     });
+
+    // Inventory Status Chart
+    const inventoryStatusCtx = document.getElementById('inventoryStatusChart').getContext('2d');
+    inventoryStatusChart = new Chart(inventoryStatusCtx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Current Stock',
+                data: [],
+                backgroundColor: '#8B4543'
+            }, {
+                label: 'Minimum Stock',
+                data: [],
+                backgroundColor: '#C4804D'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Function to update dashboard data
+function updateDashboard() {
+    // Update stats
+    $.get('get_dashboard_stats.php', function(response) {
+        $('#totalCategories').text(response.total_categories);
+        $('#totalProducts').text(response.total_products);
+        $('#totalBranches').text(response.total_branches);
+        $('#totalRevenue').text(formatCurrency(response.total_revenue));
+    });
+
+    // Update sales trend
+    const period = $('.period-selector.active').data('period');
+    $.get('get_sales_trend.php', { period: period }, function(response) {
+        salesTrendChart.data.labels = response.labels;
+        salesTrendChart.data.datasets[0].data = response.data;
+        salesTrendChart.update();
+    });
+
+    // Update product distribution
+    $.get('get_product_distribution.php', function(response) {
+        productDistributionChart.data.labels = response.labels;
+        productDistributionChart.data.datasets[0].data = response.data;
+        productDistributionChart.update();
+    });
+
+    // Update branch performance
+    $.get('get_branch_performance.php', function(response) {
+        branchPerformanceChart.data.labels = response.labels;
+        branchPerformanceChart.data.datasets[0].data = response.data;
+        branchPerformanceChart.update();
+    });
+
+    // Update inventory status
+    $.get('get_inventory_status.php', function(response) {
+        inventoryStatusChart.data.labels = response.labels;
+        inventoryStatusChart.data.datasets[0].data = response.current_stock;
+        inventoryStatusChart.data.datasets[1].data = response.minimum_stock;
+        inventoryStatusChart.update();
+    });
+}
+
+// Function to update cashier performance data
+function updateCashierPerformance() {
+    const period = $('#cashierPeriod').val();
+    
+    $.get('get_cashier_performance.php', { period: period }, function(response) {
+        // Update summary stats
+        $('#activeCashiers').text(response.active_cashiers);
+        $('#totalTransactions').text(response.total_transactions);
+        $('#avgTransactionTime').text(response.avg_transaction_time);
+        $('#totalCashierSales').text(formatCurrency(response.total_sales));
+
+        // Update table
+        const tbody = $('#cashierPerformanceTable tbody');
+        tbody.empty();
+
+        response.cashiers.forEach(cashier => {
+            const paymentBreakdown = `
+                <div class="small">
+                    <div>Cash: ${formatCurrency(cashier.cash_sales)}</div>
+                    <div>Card: ${formatCurrency(cashier.card_sales)}</div>
+                    <div>E-Wallet: ${formatCurrency(cashier.ewallet_sales)}</div>
+                </div>
+            `;
+
+            const orderTypeBreakdown = `
+                <div class="small">
+                    <div>Dine-in: ${cashier.dine_in_orders}</div>
+                    <div>Takeout: ${cashier.takeout_orders}</div>
+                    <div>Delivery: ${cashier.delivery_orders}</div>
+                </div>
+            `;
+
+            tbody.append(`
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <img src="${cashier.profile_image || 'assets/img/default-avatar.png'}" 
+                                 class="rounded-circle me-2" width="32" height="32">
+                            ${cashier.name}
+                        </div>
+                    </td>
+                    <td>${cashier.branch}</td>
+                    <td>
+                        <div>${cashier.transactions}</div>
+                        ${orderTypeBreakdown}
+                    </td>
+                    <td>
+                        <div>${formatCurrency(cashier.sales)}</div>
+                        ${paymentBreakdown}
+                    </td>
+                    <td>
+                        <div>${cashier.avg_time}</div>
+                        <div class="small">Avg. Order: ${formatCurrency(cashier.avg_order_value)}</div>
+                    </td>
+                    <td>
+                        <span class="cashier-status ${cashier.is_active ? 'status-active' : 'status-inactive'}">
+                            ${cashier.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary view-details" data-id="${cashier.id}">
+                            View Details
+                        </button>
+                    </td>
+                </tr>
+            `);
+        });
+    });
+}
+
+// Function to show cashier details modal
+function showCashierDetails(cashierId) {
+    const modal = $('#cashierDetailsModal');
+    modal.modal('show');
+
+    $.get('get_cashier_details.php', { id: cashierId }, function(response) {
+        // Initialize hourly sales chart
+        const hourlyCtx = document.getElementById('cashierHourlySalesChart').getContext('2d');
+        new Chart(hourlyCtx, {
+            type: 'line',
+            data: {
+                labels: response.hourly_sales.labels,
+                datasets: [{
+                    label: 'Total Sales',
+                    data: response.hourly_sales.data,
+                    borderColor: '#8B4543',
+                    backgroundColor: 'rgba(139, 69, 67, 0.1)',
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                                return formatCurrency(context.raw);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Initialize payment methods chart
+        const paymentCtx = document.getElementById('cashierPaymentMethodsChart').getContext('2d');
+        new Chart(paymentCtx, {
+            type: 'doughnut',
+            data: {
+                labels: response.payment_methods.labels,
+                datasets: [{
+                    data: response.payment_methods.data,
+                    backgroundColor: ['#8B4543', '#4A7C59', '#C4804D']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const method = response.payment_methods.labels[context.dataIndex];
+                                const count = context.raw;
+                                const total = response.payment_methods.total[context.dataIndex];
+                                return `${method}: ${count} orders (${formatCurrency(total)})`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Populate transactions table
+        const tbody = $('#cashierTransactionsTable tbody');
+        tbody.empty();
+
+        response.transactions.forEach(tx => {
+            tbody.append(`
+                <tr>
+                    <td>${tx.time}</td>
+                    <td>${tx.order_id}</td>
+                    <td>${tx.items}</td>
+                    <td>
+                        <div>${formatCurrency(tx.total)}</div>
+                        <div class="small">
+                            <div>Subtotal: ${formatCurrency(tx.subtotal)}</div>
+                            <div>Tax: ${formatCurrency(tx.tax)}</div>
+                            <div>Discount: ${formatCurrency(tx.discount)} (${tx.discount_type})</div>
+                        </div>
+                    </td>
+                    <td>
+                        <div>${tx.payment_method}</div>
+                        <div class="small">${tx.service_type}</div>
+                    </td>
+                    <td>
+                        <span class="badge ${tx.status === 'completed' ? 'bg-success' : 'bg-warning'}">
+                            ${tx.status}
+                        </span>
+                    </td>
+                </tr>
+            `);
+        });
+    });
+}
+
+$(document).ready(function() {
+    // Initialize charts
+    initializeCharts();
+
+    // Initial update
+    updateDashboard();
+
+    // Set up period selector buttons
+    $('.period-selector').click(function() {
+        $('.period-selector').removeClass('active');
+        $(this).addClass('active');
+        updateDashboard();
+    });
+
+    // Auto-refresh every 5 minutes
+    setInterval(updateDashboard, 300000);
+
+    // Initialize cashier performance
+    updateCashierPerformance();
+
+    // Set up event handlers
+    $('#cashierPeriod').change(updateCashierPerformance);
+    $('#refreshCashierStats').click(updateCashierPerformance);
+
+    $(document).on('click', '.view-details', function() {
+        const cashierId = $(this).data('id');
+        showCashierDetails(cashierId);
+    });
+
+    // Add cashier performance to auto-refresh
+    setInterval(updateCashierPerformance, 300000);
 });
 </script>
 

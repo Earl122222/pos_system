@@ -11,16 +11,24 @@ $branches = $stmt->fetchAll(PDO::FETCH_ASSOC);
 include('header.php');
 ?>
 
+<!-- Main Content -->
 <div class="container-fluid px-4">
-    <h1 class="mt-4" style="color: #8B4543; font-size: 1.25rem; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-weight: 500; background-color: #F8F9FA; padding: 1rem;">
-        | Branch Overview
-    </h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mt-4" style="color: #8B4543; font-size: 1.5rem; font-weight: 600;">Branch Overview</h1>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" id="refreshStats">
+                <i class="fas fa-sync-alt me-2"></i>Refresh Stats
+            </button>
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#branchComparisonModal">
+                <i class="fas fa-chart-bar me-2"></i>Compare Branches
+            </button>
+        </div>
+    </div>
 
-    <!-- Branch Cards -->
     <div class="row" id="branchCards">
         <?php foreach ($branches as $branch): ?>
         <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card branch-card h-100">
+            <div class="card branch-card h-100" data-branch-id="<?php echo $branch['branch_id']; ?>">
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><?php echo htmlspecialchars($branch['branch_name']); ?></h5>
@@ -83,14 +91,14 @@ include('header.php');
                         </div>
                     </div>
                 </div>
-                <div class="card-footer">
-                    <div class="d-flex justify-content-between">
-                        <button type="button" class="btn btn-sm btn-primary view-sales-btn" data-branch-id="<?php echo $branch['branch_id']; ?>" data-branch-name="<?php echo htmlspecialchars($branch['branch_name']); ?>">
+                <div class="card-footer bg-transparent border-top">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <button class="btn btn-primary btn-sm view-sales-btn" data-bs-toggle="modal" data-bs-target="#salesModal" data-branch-id="<?php echo $branch['branch_id']; ?>" data-branch-name="<?php echo htmlspecialchars($branch['branch_name']); ?>">
                             <i class="fas fa-chart-line me-1"></i> View Sales
                         </button>
-                        <a href="branch_inventory.php?branch=<?php echo $branch['branch_id']; ?>" class="btn btn-sm btn-secondary">
+                        <button class="btn btn-secondary btn-sm" onclick="window.location.href='branch_inventory.php?id=<?php echo $branch['branch_id']; ?>'">
                             <i class="fas fa-boxes me-1"></i> View Inventory
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -168,83 +176,93 @@ include('header.php');
 </div>
 
 <!-- Sales Modal -->
-<div class="modal fade" id="branchSalesModal" tabindex="-1">
+<div class="modal fade" id="salesModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"></h5>
+                <h5 class="modal-title">Branch Sales</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="stats-cards">
-                    <div class="stat-card bg-gradient-primary">
-                        <div class="stat-card-inner">
-                            <div class="stat-icon">
-                                <i class="fas fa-shopping-cart"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h4 class="stat-value" id="modalTotalOrders">0</h4>
-                                <div class="stat-label">Total Orders Today</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stat-card bg-gradient-success">
-                        <div class="stat-card-inner">
-                            <div class="stat-icon">
-                                <i class="fas fa-peso-sign"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h4 class="stat-value" id="modalTotalSales">₱0.00</h4>
-                                <div class="stat-label">Total Sales Today</div>
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="stat-card bg-gradient-primary">
+                            <div class="stat-card-inner">
+                                <div class="stat-icon">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h4 class="stat-value" id="modalTotalOrders">0</h4>
+                                    <div class="stat-label">Total Orders Today</div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="stat-card bg-gradient-warning">
-                        <div class="stat-card-inner">
-                            <div class="stat-icon">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h4 class="stat-value" id="modalAverageSale">₱0.00</h4>
-                                <div class="stat-label">Average Sale Today</div>
+                    <div class="col-md-3">
+                        <div class="stat-card bg-gradient-success">
+                            <div class="stat-card-inner">
+                                <div class="stat-icon">
+                                    <i class="fas fa-peso-sign"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h4 class="stat-value" id="modalTotalSales">₱0.00</h4>
+                                    <div class="stat-label">Total Sales Today</div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="stat-card bg-gradient-info">
-                        <div class="stat-card-inner">
-                            <div class="stat-icon">
-                                <i class="fas fa-trophy"></i>
+                    <div class="col-md-3">
+                        <div class="stat-card bg-gradient-warning">
+                            <div class="stat-card-inner">
+                                <div class="stat-icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h4 class="stat-value" id="modalAverageSale">₱0.00</h4>
+                                    <div class="stat-label">Average Sale Today</div>
+                                </div>
                             </div>
-                            <div class="stat-content">
-                                <h4 class="stat-value" id="modalHighestSale">₱0.00</h4>
-                                <div class="stat-label">Highest Sale Today</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card bg-gradient-info">
+                            <div class="stat-card-inner">
+                                <div class="stat-icon">
+                                    <i class="fas fa-trophy"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h4 class="stat-value" id="modalHighestSale">₱0.00</h4>
+                                    <div class="stat-label">Highest Sale Today</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="charts-section">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h2 class="chart-title">Sales Trend</h2>
-                            <div class="chart-filters">
-                                <select id="modalTrendPeriod" class="form-select form-select-sm">
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Sales Trend</h6>
+                                <select class="form-select form-select-sm w-auto" id="salesTrendPeriod">
                                     <option value="today">Today</option>
                                     <option value="week">This Week</option>
                                     <option value="month">This Month</option>
-                                    <option value="year">This Year</option>
                                 </select>
                             </div>
-                        </div>
-                        <div class="chart-body">
-                            <canvas id="modalSalesTrendChart"></canvas>
+                            <div class="card-body">
+                                <canvas id="salesTrendChart" height="300"></canvas>
+                            </div>
                         </div>
                     </div>
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h2 class="chart-title">Payment Methods</h2>
-                        </div>
-                        <div class="chart-body">
-                            <canvas id="modalPaymentMethodsChart"></canvas>
+                    <div class="col-md-4">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">Payment Methods</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="paymentMethodsChart" height="300"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -254,207 +272,209 @@ include('header.php');
 </div>
 
 <style>
+:root {
+    --primary-color: #8B4543;
+    --primary-dark: #723937;
+    --primary-light: #A65D5D;
+    --success-color: #4A7C59;
+    --warning-color: #C4804D;
+    --info-color: #36b9cc;
+    --danger-color: #B33A3A;
+    --text-light: #F3E9E7;
+    --text-dark: #3C2A2A;
+    --border-radius: 15px;
+    --card-shadow: 0 4px 20px rgba(168, 102, 102, 0.1);
+    --hover-shadow: 0 8px 30px rgba(168, 102, 102, 0.15);
+    --transition-speed: 0.3s;
+}
+
+/* Branch Card Styles */
 .branch-card {
-    transition: transform 0.2s ease;
+    background: #fff;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(168, 102, 102, 0.1);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
 }
 
 .branch-card:hover {
     transform: translateY(-5px);
+    box-shadow: var(--hover-shadow);
 }
 
-.stat-card {
-    border-radius: 0.5rem;
+.branch-header {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+}
+
+.branch-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.branch-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-top: 0.5rem;
+}
+
+.branch-status.operating {
+    background: rgba(74, 124, 89, 0.2);
+    color: #4A7C59;
+}
+
+.branch-status.closed {
+    background: rgba(179, 58, 58, 0.2);
+    color: #B33A3A;
+}
+
+.branch-body {
+    padding: 1.5rem;
+}
+
+.branch-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-item {
+    padding: 1rem;
+    background: rgba(168, 102, 102, 0.05);
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 0.25rem;
 }
 
 .stat-label {
     font-size: 0.875rem;
-    opacity: 0.9;
+    color: var(--text-dark);
+    opacity: 0.8;
 }
 
-.stat-value {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-top: 0.25rem;
+.branch-footer {
+    padding: 1rem 1.5rem;
+    background: rgba(168, 102, 102, 0.05);
+    border-top: 1px solid rgba(168, 102, 102, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.alert {
-    border: none;
-    border-radius: 0.5rem;
-}
-
-.alert-label {
-    font-size: 0.75rem;
-    opacity: 0.9;
-}
-
-.alert-value {
-    font-size: 1.125rem;
-    font-weight: 600;
-}
-
-.card-footer {
-    background: none;
-    border-top: 1px solid rgba(0,0,0,0.05);
-    padding: 1rem;
-}
-
-.form-select-sm {
+.cashier-info {
     font-size: 0.875rem;
-    padding: 0.25rem 2rem 0.25rem 0.5rem;
+    color: var(--text-dark);
 }
 
-.operating-status {
-    text-align: center;
-    margin-bottom: 1rem;
-}
-
-.operating-status .badge {
-    font-size: 0.85rem;
-    padding: 0.5em 1em;
-}
-
-.active-cashiers {
-    font-size: 0.9rem;
-    padding: 0.5rem 0;
-}
-
-.active-cashiers .cashier-list {
+.branch-actions .btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
     font-weight: 500;
+    transition: all var(--transition-speed) ease;
 }
 
-.branch-closed .stat-card {
-    opacity: 0.7;
-    background-color: #6c757d !important;
+.btn-primary {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
 }
 
+.btn-primary:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    background: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.btn-success:hover {
+    background: darken(var(--success-color), 10%);
+    border-color: darken(var(--success-color), 10%);
+    transform: translateY(-2px);
+}
+
+/* Modal Styles */
 .modal-content {
     border: none;
-    border-radius: 15px;
+    border-radius: var(--border-radius);
     overflow: hidden;
 }
 
 .modal-header {
-    background: linear-gradient(135deg, var(--color-600) 0%, var(--color-800) 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
     color: white;
     border: none;
     padding: 1.5rem;
 }
 
-.modal-title {
-    font-weight: 500;
+.modal-body {
+    padding: 1.5rem;
+    background: #f8f9fa;
 }
 
 .btn-close {
     filter: brightness(0) invert(1);
 }
 
-.modal .card {
-    border-radius: 0.5rem;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    height: 100%;
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .branch-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-dialog {
+        margin: 0.5rem;
+    }
 }
 
-.modal .card-title {
-    color: var(--primary-color);
+/* Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.comparison-rank {
-    font-size: 1.25rem;
-    font-weight: 600;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background-color: #f8f9fa;
+.branch-card {
+    animation: fadeIn 0.5s ease-out forwards;
 }
 
-.rank-1 {
-    background-color: #ffd700;
-    color: #000;
-}
+.branch-card:nth-child(2) { animation-delay: 0.1s; }
+.branch-card:nth-child(3) { animation-delay: 0.2s; }
+.branch-card:nth-child(4) { animation-delay: 0.3s; }
 
-.rank-2 {
-    background-color: #c0c0c0;
-    color: #000;
-}
-
-.rank-3 {
-    background-color: #cd7f32;
-    color: #fff;
-}
-
-.top-products-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.top-products-list li {
-    font-size: 0.875rem;
-    margin-bottom: 0.25rem;
-}
-
-.top-products-list li:last-child {
-    margin-bottom: 0;
-}
-
-.product-quantity {
-    color: #6c757d;
-    font-size: 0.8125rem;
-}
-
-.date-filter {
-    display: none;
-}
-
-.date-filter.show {
-    display: flex !important;
-}
-
-.form-control-sm, .form-select-sm {
-    height: 31px;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-    border-radius: 0.25rem;
-}
-
-.btn-sm {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-    border-radius: 0.25rem;
-}
-
-/* Gradient Backgrounds */
-.bg-gradient-primary {
-    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
-}
-
-.bg-gradient-success {
-    background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
-}
-
-.bg-gradient-warning {
-    background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);
-}
-
-.bg-gradient-info {
-    background: linear-gradient(135deg, #36b9cc 0%, #258391 100%);
-}
-
-/* Enhanced Card Styles */
+/* Add these new styles */
 .stat-card {
     border-radius: 15px;
     padding: 1.5rem;
     margin-bottom: 1rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .stat-card-inner {
@@ -485,346 +505,204 @@ include('header.php');
     margin-top: 0.25rem;
 }
 
-/* Chart Card Styles */
-.chart-card {
-    background: #ffffff;
-    border-radius: 15px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin-bottom: 1.5rem;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #8B4543 0%, #723937 100%);
 }
 
-.chart-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+.bg-gradient-success {
+    background: linear-gradient(135deg, #4A7C59 0%, #3A6246 100%);
 }
 
-.chart-header {
-    padding: 1.25rem;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.bg-gradient-warning {
+    background: linear-gradient(135deg, #C4804D 0%, #A66B3F 100%);
 }
 
-.chart-title {
-    font-size: 1.25rem;
-    color: #2c3e50;
-    margin: 0;
-    font-weight: 600;
-}
-
-.chart-body {
-    padding: 1.25rem;
-    height: 300px;
-    position: relative;
-}
-
-.chart-filters {
-    display: flex;
-    gap: 1rem;
-}
-
-.form-select-sm {
-    padding: 0.25rem 2rem 0.25rem 0.5rem;
-    font-size: 0.875rem;
-    border-radius: 0.5rem;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    background-color: #fff;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.form-select-sm:focus {
-    border-color: #4e73df;
-    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
-}
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-    .modal-dialog {
-        margin: 0.5rem;
-    }
-    
-    .stat-card {
-        padding: 1rem;
-    }
-    
-    .stat-icon {
-        font-size: 2rem;
-    }
-    
-    .stat-value {
-        font-size: 1.5rem;
-    }
-    
-    .chart-card {
-        margin-bottom: 1rem;
-    }
-    
-    .chart-body {
-        height: 250px;
-    }
+.bg-gradient-info {
+    background: linear-gradient(135deg, #36b9cc 0%, #258391 100%);
 }
 </style>
 
 <script>
-$(document).ready(function() {
-    let modalSalesChart;
-    let modalPaymentChart;
-    let currentBranchId;
-    let updateTimer;
+let modalSalesChart = null;
+let modalPaymentChart = null;
+let currentBranchId = null;
 
-    // Initialize modal charts
-    function initializeModalCharts() {
-        const salesCtx = document.getElementById('modalSalesTrendChart').getContext('2d');
-        modalSalesChart = new Chart(salesCtx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Sales',
-                    data: [],
-                    borderColor: '#8B4543',
-                    tension: 0.1,
-                    fill: false
-                }]
+function destroyCharts() {
+    if (modalSalesChart) {
+        modalSalesChart.destroy();
+        modalSalesChart = null;
+    }
+    if (modalPaymentChart) {
+        modalPaymentChart.destroy();
+        modalPaymentChart = null;
+    }
+}
+
+function initializeModalCharts() {
+    const salesCtx = document.getElementById('salesTrendChart').getContext('2d');
+    modalSalesChart = new Chart(salesCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Sales',
+                data: [],
+                borderColor: '#8B4543',
+                backgroundColor: 'rgba(139, 69, 67, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return '₱' + context.parsed.y.toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            });
+                        }
+                    }
+                }
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '₱' + value.toLocaleString();
-                            }
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₱' + value.toLocaleString('en-US');
                         }
                     }
                 }
             }
-        });
+        }
+    });
 
-        const paymentCtx = document.getElementById('modalPaymentMethodsChart').getContext('2d');
-        modalPaymentChart = new Chart(paymentCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Cash', 'Credit Card', 'E-Wallet'],
-                datasets: [{
-                    data: [0, 0, 0],
-                    backgroundColor: ['#4A7C59', '#C4804D', '#8B4543']
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-    }
-
-    // Function to update branch statistics
-    function updateBranchStats() {
-        <?php foreach ($branches as $branch): ?>
-        $.ajax({
-            url: 'get_branch_stats.php',
-            data: { branch_id: <?php echo $branch['branch_id']; ?> },
-            success: function(response) {
-                const branchCard = $('#sales-<?php echo $branch['branch_id']; ?>').closest('.branch-card');
-                const statusBadge = $('#status-<?php echo $branch['branch_id']; ?>');
-                const cashiersList = $('#cashiers-<?php echo $branch['branch_id']; ?> .cashier-list');
-                
-                if (response.is_operating) {
-                    statusBadge.html('<span class="badge bg-success">Currently Operating</span>');
-                    branchCard.find('.stat-card').parent().removeClass('branch-closed');
-                } else {
-                    let statusText = 'Closed';
-                    if (!response.has_active_cashiers) {
-                        statusText = 'No Active Cashiers';
+    const paymentCtx = document.getElementById('paymentMethodsChart').getContext('2d');
+    modalPaymentChart = new Chart(paymentCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Cash', 'Credit Card', 'E-Wallet'],
+            datasets: [{
+                data: [0, 0, 0],
+                backgroundColor: ['#4A7C59', '#C4804D', '#8B4543']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                            return `${context.label}: ${context.parsed} (${percentage}%)`;
+                        }
                     }
-                    statusBadge.html('<span class="badge bg-secondary">' + statusText + '</span>');
-                    branchCard.find('.stat-card').parent().addClass('branch-closed');
-                }
-
-                // Update active cashiers list
-                if (response.active_cashiers > 0) {
-                    let cashierText = response.active_usernames.join(', ');
-                    cashiersList.html('<span class="text-success">' + cashierText + '</span>');
-                } else {
-                    cashiersList.html('<span class="text-muted">No active cashiers</span>');
-                }
-
-                $('#sales-<?php echo $branch['branch_id']; ?>').text('₱' + response.today_sales.toLocaleString());
-                $('#orders-<?php echo $branch['branch_id']; ?>').text(response.today_orders);
-                $('#lowstock-<?php echo $branch['branch_id']; ?>').text(response.low_stock_count);
-                $('#expiring-<?php echo $branch['branch_id']; ?>').text(response.expiring_count);
-
-                // Update modal data if this is the current branch being viewed
-                if (currentBranchId === <?php echo $branch['branch_id']; ?> && $('#branchSalesModal').is(':visible')) {
-                    updateModalData(<?php echo $branch['branch_id']; ?>);
                 }
             }
-        });
-        <?php endforeach; ?>
-    }
+        }
+    });
+}
 
-    // Function to update modal data
-    function updateModalData(branchId) {
-        $.ajax({
-            url: 'get_branch_sales_data.php',
-            data: { 
-                branch_id: branchId,
-                period: $('#modalTrendPeriod').val()
-            },
-            success: function(response) {
-                $('#modalTotalOrders').text(response.today_stats.total_orders);
-                $('#modalTotalSales').text('₱' + response.today_stats.total_sales.toLocaleString());
-                $('#modalAverageSale').text('₱' + response.today_stats.average_sale.toLocaleString());
-                $('#modalHighestSale').text('₱' + response.today_stats.highest_sale.toLocaleString());
-
-                // Update sales trend chart
-                modalSalesChart.data.labels = response.sales_trend.labels;
-                modalSalesChart.data.datasets[0].data = response.sales_trend.data;
-                modalSalesChart.update();
-
-                // Update payment methods chart
-                modalPaymentChart.data.datasets[0].data = [
-                    response.payment_methods.cash,
-                    response.payment_methods.credit_card,
-                    response.payment_methods.e_wallet
-                ];
-                modalPaymentChart.update();
+function updateModalCharts(branchId) {
+    const period = $('#salesTrendPeriod').val();
+    
+    $.ajax({
+        url: 'get_branch_sales_data.php',
+        method: 'GET',
+        data: {
+            branch_id: branchId,
+            period: period
+        },
+        success: function(response) {
+            if (response.error) {
+                console.error('Error:', response.error);
+                return;
             }
-        });
-    }
 
-    // Initialize charts when document is ready
-    initializeModalCharts();
+            // Update statistics
+            $('#modalTotalOrders').text(response.today_stats.total_orders);
+            $('#modalTotalSales').text('₱' + parseFloat(response.today_stats.total_sales).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }));
+            $('#modalAverageSale').text('₱' + parseFloat(response.today_stats.average_sale).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }));
+            $('#modalHighestSale').text('₱' + parseFloat(response.today_stats.highest_sale).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }));
 
-    // Handle view sales button click
-    $('.view-sales-btn').click(function() {
+            // Update sales trend chart
+            modalSalesChart.data.labels = response.sales_trend.labels;
+            modalSalesChart.data.datasets[0].data = response.sales_trend.data;
+            modalSalesChart.update();
+
+            // Update payment methods chart
+            modalPaymentChart.data.datasets[0].data = [
+                response.payment_methods.cash,
+                response.payment_methods.credit_card,
+                response.payment_methods.e_wallet
+            ];
+            modalPaymentChart.update();
+        },
+        error: function(xhr, status, error) {
+            console.error('Ajax error:', error);
+        }
+    });
+}
+
+$(document).ready(function() {
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Handle View Sales button click
+    $('.view-sales-btn').on('click', function() {
         const branchId = $(this).data('branch-id');
         const branchName = $(this).data('branch-name');
         currentBranchId = branchId;
         
         // Update modal title
-        $('.modal-title').text(branchName + ' Sales Report');
+        $('.modal-title').text(branchName + ' - Sales Report');
         
-        // Show modal
-        $('#branchSalesModal').modal('show');
-        
-        // Update modal data
-        updateModalData(branchId);
-        
-        // Clear existing timer and start new one
-        if (updateTimer) clearInterval(updateTimer);
-        updateTimer = setInterval(() => updateModalData(branchId), 60000); // Update every minute
-    });
-
-    // Handle modal period change
-    $('#modalTrendPeriod').change(function() {
-        if (currentBranchId) {
-            updateModalData(currentBranchId);
+        // Initialize charts if they don't exist
+        if (!modalSalesChart || !modalPaymentChart) {
+            initializeModalCharts();
         }
+        
+        // Update charts and statistics
+        updateModalCharts(branchId);
     });
-
-    // Handle modal close
-    $('#branchSalesModal').on('hidden.bs.modal', function() {
-        if (updateTimer) clearInterval(updateTimer);
-        currentBranchId = null;
-    });
-
-    // Initial load and refresh timer
-    updateBranchStats();
-    setInterval(updateBranchStats, 30000); // Update every 30 seconds
-
-    // Set default dates
-    const today = new Date();
-    const firstDayOfYear = new Date(today.getFullYear(), 0, 1);
-    $('#startDate').val(firstDayOfYear.toISOString().split('T')[0]);
-    $('#endDate').val(today.toISOString().split('T')[0]);
 
     // Handle period change
-    $('#comparisonPeriod').change(function() {
-        const period = $(this).val();
-        const dateFilter = $('.date-filter');
-        
-        if (period === 'custom') {
-            dateFilter.addClass('show');
-        } else {
-            dateFilter.removeClass('show');
-            updateBranchComparison();
+    $('#salesTrendPeriod').on('change', function() {
+        if (currentBranchId) {
+            updateModalCharts(currentBranchId);
         }
     });
 
-    // Handle apply filter button
-    $('#applyFilter').click(function() {
-        updateBranchComparison();
+    // Clean up when modal is hidden
+    $('#salesModal').on('hidden.bs.modal', function() {
+        currentBranchId = null;
+        destroyCharts();
     });
-
-    // Function to update branch comparison table
-    function updateBranchComparison() {
-        const period = $('#comparisonPeriod').val();
-        const data = {
-            period: period
-        };
-
-        if (period === 'custom') {
-            data.start_date = $('#startDate').val();
-            data.end_date = $('#endDate').val();
-        }
-
-        $.ajax({
-            url: 'get_branch_comparison.php',
-            data: data,
-            success: function(response) {
-                if (response.success) {
-                    let tableBody = '';
-                    response.data.forEach((branch, index) => {
-                        const rank = index + 1;
-                        const rankClass = rank <= 3 ? `rank-${rank}` : '';
-                        
-                        let status = 'Currently Operating';
-                        let statusClass = 'bg-success';
-                        
-                        if (branch.active_cashiers === 0) {
-                            status = 'No Active Cashiers';
-                            statusClass = 'bg-secondary';
-                        }
-
-                        let topProductsHtml = '<ul class="top-products-list">';
-                        branch.top_products.forEach(product => {
-                            topProductsHtml += `
-                                <li>${product.product_name} 
-                                    <span class="product-quantity">(${product.total_quantity} units - ₱${product.total_revenue.toLocaleString()})</span>
-                                </li>`;
-                        });
-                        topProductsHtml += '</ul>';
-
-                        tableBody += `
-                            <tr>
-                                <td>
-                                    <div class="comparison-rank ${rankClass}">${rank}</div>
-                                </td>
-                                <td>
-                                    <strong>${branch.branch_name}</strong><br>
-                                    <small class="text-muted">${branch.branch_code}</small>
-                                </td>
-                                <td><span class="badge ${statusClass}">${status}</span></td>
-                                <td class="text-end">${branch.total_orders.toLocaleString()}</td>
-                                <td class="text-end">₱${branch.total_sales.toLocaleString()}</td>
-                                <td class="text-end">₱${branch.average_sale.toLocaleString()}</td>
-                                <td>${topProductsHtml}</td>
-                            </tr>`;
-                    });
-                    
-                    $('#branchComparisonTable tbody').html(tableBody);
-                }
-            }
-        });
-    }
 });
 </script>
 
-<?php include('footer.php'); ?> 
 <?php include('footer.php'); ?> 

@@ -140,28 +140,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 error_log('User data from database: ' . print_r($user, true));
                 
                 if ($user && password_verify($password, $user['user_password'])) {
-                    // Ensure connection is active before clearing attempts
-                    $pdo = checkConnection($pdo);
-                    
                     // Clear login attempts on successful login
                     $clear_attempts = $pdo->prepare("DELETE FROM login_attempts WHERE email = ?");
                     $clear_attempts->execute([$email]);
                     
                     // Store session variables
                     $_SESSION['user_id'] = $user['user_id'];
-                    $_SESSION['user_type'] = $user['user_type'];
-                    $_SESSION['user_logged_in'] = true;
                     $_SESSION['user_name'] = $user['user_name'];
+                    $_SESSION['user_type'] = $user['user_type'];
+                    $_SESSION['user_email'] = $user['user_email'];
+                    $_SESSION['user_logged_in'] = true;
                     
                     // Clear CAPTCHA session after successful login
                     unset($_SESSION['captcha_code']);
                     
-                    // Debug: Log the session data
-                    error_log('Login successful. Session data: ' . print_r($_SESSION, true));
-                    
-                    // Redirect based on user type
+                    // If user is a cashier, create a session
                     if ($user['user_type'] === 'Cashier') {
-                        header('Location: add_order.php');
+                        // Get cashier's branch
+                        $stmt = $pdo->prepare("
+                            SELECT branch_id 
+                            FROM pos_cashier_details 
+                            WHERE user_id = ?
+                        ");
+                        $stmt->execute([$user['user_id']]);
+                        $cashier = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                        if ($cashier) {
+                            // End any existing active sessions for this cashier
+                            $stmt = $pdo->prepare("
+                                UPDATE pos_cashier_sessions 
+                                SET is_active = FALSE, 
+                                    logout_time = CURRENT_TIMESTAMP 
+                                WHERE user_id = ? 
+                                AND is_active = TRUE
+                            ");
+                            $stmt->execute([$user['user_id']]);
+
+                            // Create new session
+                            $stmt = $pdo->prepare("
+                                INSERT INTO pos_cashier_sessions 
+                                (user_id, branch_id, login_time, is_active) 
+                                VALUES (?, ?, CURRENT_TIMESTAMP, TRUE)
+                            ");
+                            $stmt->execute([$user['user_id'], $cashier['branch_id']]);
+                        }
+
+                        // Redirect to sales page or stored redirect URL
+                        header('Location: ' . ($_SESSION['redirect_url'] ?? 'sales.php'));
+                        unset($_SESSION['redirect_url']);
                     } else {
                         header('Location: dashboard.php');
                     }
