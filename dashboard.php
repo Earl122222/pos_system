@@ -1853,24 +1853,27 @@ function updateCashierPerformance() {
         const tbody = $('#cashierPerformanceTable tbody');
         tbody.empty();
 
-        response.items.forEach(item => {
-            tbody.append(`
-                <tr>
-                    <td>
-                        <div class="item-name">
-                            <i class="fas fa-utensils"></i>
-                            ${item.name}
-                        </div>
-                    </td>
-                    <td>
-                        <div class="total-amount">₱${formatCurrency(item.total)}</div>
-                    </td>
-                    <td>
-                        <div class="qty-badge">${item.quantity}</div>
-                    </td>
-                </tr>
-            `);
-        });
+        if (response.cashiers && response.cashiers.length > 0) {
+            response.cashiers.forEach(cashier => {
+                tbody.append(`
+                    <tr>
+                        <td>
+                            <div class="item-name d-flex align-items-center">
+                                <img src="${cashier.profile_image}" class="rounded-circle me-2" style="width: 32px; height: 32px;">
+                                ${cashier.name}
+                            </div>
+                        </td>
+                        <td>${cashier.branch || '-'}</td>
+                        <td><span class="badge ${cashier.is_active ? 'bg-success' : 'bg-secondary'}">${cashier.is_active ? 'Active' : 'Inactive'}</span></td>
+                        <td>${cashier.transactions}</td>
+                        <td>₱${formatCurrency(cashier.sales)}</td>
+                        <td>${cashier.avg_time}</td>
+                    </tr>
+                `);
+            });
+        } else {
+            tbody.append('<tr><td colspan="6" class="text-center text-muted">No cashiers found for this period.</td></tr>');
+        }
     });
 }
 
@@ -2202,6 +2205,16 @@ $(document).ready(function() {
             animateValue(document.getElementById('totalCashierSales'), oldValues.totalSales, newValues.totalSales, 1000);
         }, 100);
     };
+
+    // Update table headers if needed
+    $('#cashierPerformanceTable thead tr').html(`
+        <th>Cashier</th>
+        <th>Branch</th>
+        <th>Status</th>
+        <th>Transactions</th>
+        <th>Sales</th>
+        <th>Avg. Time</th>
+    `);
 });
 
 // Menu Items Interaction
