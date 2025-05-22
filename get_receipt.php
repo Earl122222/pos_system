@@ -2,21 +2,22 @@
 require_once 'db_connect.php';
 require_once 'auth_function.php';
 
-checkOrderAccess();
+// Check if order ID is provided
+if (!isset($_GET['id'])) {
+    die('Order ID is required');
+}
 
-// Get configuration data
-$confData = getConfigData($pdo);
-
-// Get order ID from URL
-$order_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$order_id = $_GET['id'];
 
 try {
-    // Get order details with cashier name
+    // Get order details
     $stmt = $pdo->prepare("
         SELECT 
             o.*,
+            b.branch_name,
             u.user_name as cashier_name
         FROM pos_order o
+        LEFT JOIN pos_branch b ON o.branch_id = b.branch_id
         LEFT JOIN pos_user u ON o.order_created_by = u.user_id
         WHERE o.order_id = ?
     ");
@@ -24,207 +25,102 @@ try {
     $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$order) {
-        die("Order not found");
+        die('Order not found');
     }
 
-    // Get order items with product names
+    // Get order items
     $stmt = $pdo->prepare("
         SELECT 
             oi.*,
             p.product_name
         FROM pos_order_item oi
-        LEFT JOIN pos_product p ON oi.product_id = p.product_id
+        JOIN pos_product p ON oi.product_id = p.product_id
         WHERE oi.order_id = ?
     ");
     $stmt->execute([$order_id]);
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Format receipt content
+    ?>
+    <div class="receipt-content" style="font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.4;">
+        <!-- Header -->
+        <div class="text-center mb-3">
+            <img src="assets/img/logo.png" alt="Logo" style="max-width: 60px; margin-bottom: 10px;">
+            <h4 class="mb-1" style="font-size: 16px; font-weight: bold;">MORE BITES</h4>
+            <p class="mb-1" style="font-size: 12px;"><?php echo htmlspecialchars($order['branch_name']); ?></p>
+            <p class="mb-1" style="font-size: 11px;">123 Main St</p>
+            <p class="mb-1" style="font-size: 11px;">Tel: 123-456-7890</p>
+            <p class="mb-3" style="font-size: 11px;">Email: admin@restaurant.com</p>
+        </div>
+
+        <!-- Order Info -->
+        <div class="mb-3" style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 8px 0;">
+            <p class="mb-1">Order #: <?php echo str_pad($order['order_id'], 8, '0', STR_PAD_LEFT); ?></p>
+            <p class="mb-1">Date: <?php echo date('m/d/Y h:i A', strtotime($order['order_datetime'])); ?></p>
+            <p class="mb-1">Service: <?php echo htmlspecialchars($order['service_type']); ?></p>
+            <p class="mb-0">Payment: <?php echo htmlspecialchars($order['payment_method']); ?></p>
+        </div>
+
+        <!-- Items -->
+        <div class="mb-3">
+            <table style="width: 100%; font-size: 11px;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">Item</th>
+                        <th style="text-align: right;">Qty</th>
+                        <th style="text-align: right;">Price</th>
+                        <th style="text-align: right;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($items as $item): ?>
+                    <tr>
+                        <td style="padding: 3px 0;"><?php echo htmlspecialchars($item['product_name']); ?></td>
+                        <td style="text-align: right;"><?php echo $item['quantity']; ?></td>
+                        <td style="text-align: right;">₱<?php echo number_format($item['price'], 2); ?></td>
+                        <td style="text-align: right;">₱<?php echo number_format($item['subtotal'], 2); ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Totals -->
+        <div class="mb-3" style="border-top: 1px dashed #000; padding-top: 8px;">
+            <table style="width: 100%; font-size: 11px;">
+                <tr>
+                    <td style="text-align: right; padding: 3px 0;">Subtotal:</td>
+                    <td style="text-align: right; width: 80px;">₱<?php echo number_format($order['order_subtotal'], 2); ?></td>
+                </tr>
+                <tr>
+                    <td style="text-align: right; padding: 3px 0;">Tax (<?php echo $order['tax_rate']; ?>%):</td>
+                    <td style="text-align: right;">₱<?php echo number_format($order['tax_amount'], 2); ?></td>
+                </tr>
+                <?php if ($order['discount_amount'] > 0): ?>
+                <tr>
+                    <td style="text-align: right; padding: 3px 0;">Discount:</td>
+                    <td style="text-align: right;">-₱<?php echo number_format($order['discount_amount'], 2); ?></td>
+                </tr>
+                <?php endif; ?>
+                <tr>
+                    <td style="text-align: right; padding: 3px 0; font-weight: bold;">TOTAL:</td>
+                    <td style="text-align: right; font-weight: bold;">₱<?php echo number_format($order['order_total'], 2); ?></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center" style="border-top: 1px dashed #000; padding-top: 8px;">
+            <p class="mb-1">Cashier: <?php echo htmlspecialchars($order['cashier_name']); ?></p>
+            <p class="mb-1">Thank you for dining with us!</p>
+            <p class="mb-1">Please come again.</p>
+            <p class="mb-0" style="font-size: 10px;">
+                <?php echo date('m/d/Y h:i:s A'); ?>
+            </p>
+        </div>
+    </div>
+    <?php
 } catch (PDOException $e) {
-    die("Error fetching order details: " . $e->getMessage());
+    die('Error: ' . $e->getMessage());
 }
-?>
-<div class="receipt">
-    <div class="header">
-        <img src="asset/images/logo.png" alt="More Bites" class="logo">
-        <div class="restaurant-name">MORE BITES</div>
-        <div class="restaurant-info"><?php echo htmlspecialchars($confData['restaurant_address']); ?></div>
-        <div class="restaurant-info">Email: <?php echo htmlspecialchars($confData['restaurant_email']); ?></div>
-        <div class="restaurant-info">Tel: <?php echo htmlspecialchars($confData['restaurant_phone']); ?></div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="order-details">
-        <table class="details-table">
-            <tr>
-                <td class="label">Order #:</td>
-                <td class="value"><?php echo htmlspecialchars($order['order_number']); ?></td>
-            </tr>
-            <tr>
-                <td class="label">Date:</td>
-                <td class="value"><?php echo date('n/d/Y, h:i:s A', strtotime($order['order_datetime'])); ?></td>
-            </tr>
-            <tr>
-                <td class="label">Service:</td>
-                <td class="value"><?php echo strtoupper($order['service_type']); ?></td>
-            </tr>
-            <tr>
-                <td class="label">Payment:</td>
-                <td class="value"><?php echo strtoupper(str_replace('_', ' ', $order['payment_method'])); ?></td>
-            </tr>
-        </table>
-    </div>
-
-    <div class="items-section">
-        <table class="items-table">
-            <tr class="header-row">
-                <th>Item</th>
-                <th class="amount">Amount</th>
-            </tr>
-            <?php foreach ($items as $item): ?>
-            <tr class="item-row">
-                <td>
-                    <?php echo htmlspecialchars($item['product_name']); ?><br>
-                    <span class="price-qty"><?php echo $confData['currency'] . number_format($item['product_price'], 2) . ' × ' . $item['product_qty']; ?></span>
-                </td>
-                <td class="amount">
-                    <?php echo $confData['currency'] . number_format($item['item_total'], 2); ?>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </table>
-    </div>
-
-    <div class="totals-section">
-        <table class="totals-table">
-            <tr>
-                <td>Subtotal:</td>
-                <td class="amount"><?php echo $confData['currency'] . number_format($order['order_subtotal'], 2); ?></td>
-            </tr>
-            <tr>
-                <td>Tax (<?php echo $confData['tax_rate']; ?>%):</td>
-                <td class="amount"><?php echo $confData['currency'] . number_format($order['order_tax'], 2); ?></td>
-            </tr>
-            <?php if ($order['order_discount'] > 0): ?>
-            <tr>
-                <td>Discount:</td>
-                <td class="amount">-<?php echo $confData['currency'] . number_format($order['order_discount'], 2); ?></td>
-            </tr>
-            <?php endif; ?>
-            <tr class="total-row">
-                <td>TOTAL:</td>
-                <td class="amount"><?php echo $confData['currency'] . number_format($order['order_total'], 2); ?></td>
-            </tr>
-        </table>
-    </div>
-
-    <div class="footer">
-        <p>Thank you for dining with us!</p>
-        <p>Please come again</p>
-    </div>
-</div>
-
-<style>
-.receipt {
-    font-family: Arial, sans-serif;
-    width: 80mm;
-    padding: 10px;
-    margin: 0 auto;
-    font-size: 12px;
-    line-height: 1.4;
-}
-.header {
-    text-align: center;
-    margin-bottom: 10px;
-}
-.logo {
-    width: 60px;
-    margin-bottom: 5px;
-}
-.restaurant-name {
-    font-size: 18px;
-    font-weight: bold;
-    margin: 5px 0;
-}
-.restaurant-info {
-    font-size: 12px;
-    color: #333;
-    margin: 2px 0;
-}
-.divider {
-    border-top: 1px dashed #ff0000;
-    margin: 10px 0;
-}
-.order-details {
-    border: 1px dashed #ff0000;
-    padding: 8px;
-    margin: 10px 0;
-}
-.details-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-.details-table td {
-    padding: 2px 0;
-}
-.details-table .label {
-    color: #666;
-}
-.details-table .value {
-    text-align: right;
-    font-weight: bold;
-}
-.items-section {
-    border: 1px dashed #ff0000;
-    padding: 8px;
-    margin: 10px 0;
-}
-.items-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-.items-table th {
-    text-align: left;
-    color: #666;
-    padding-bottom: 5px;
-}
-.items-table .amount {
-    text-align: right;
-}
-.price-qty {
-    font-size: 11px;
-    color: #666;
-}
-.totals-section {
-    border: 1px dashed #ff0000;
-    padding: 8px;
-    margin: 10px 0;
-    background-color: #fff5f5;
-}
-.totals-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-.totals-table td {
-    padding: 2px 0;
-}
-.totals-table .amount {
-    text-align: right;
-}
-.total-row {
-    font-weight: bold;
-    font-size: 14px;
-    border-top: 1px dashed #ff0000;
-}
-.total-row td {
-    padding-top: 5px;
-}
-.footer {
-    text-align: center;
-    margin-top: 15px;
-    font-size: 12px;
-    color: #666;
-}
-.footer p {
-    margin: 3px 0;
-}
-</style> 
+?> 

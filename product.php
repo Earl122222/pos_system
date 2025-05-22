@@ -152,9 +152,9 @@ include('header.php');
                         <div class="col-md-6">
                             <label for="edit_product_status" class="form-label">Status</label>
                             <select class="form-select" id="edit_product_status" name="product_status" required>
-                                <option value="Available">Available</option>
+                            <option value="Available">Available</option>
                                 <option value="Unavailable">Unavailable</option>
-                            </select>
+                        </select>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -171,9 +171,9 @@ include('header.php');
                         <div id="currentImage" class="mt-2"></div>
                     </div>
                 </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" id="updateProduct">Update Product</button>
             </div>
         </div>
@@ -182,7 +182,7 @@ include('header.php');
 
 <!-- View Product Modal -->
 <div class="modal fade" id="viewProductModal" tabindex="-1" aria-labelledby="viewProductModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header" style="background-color: #8B4543; color: white;">
                 <h5 class="modal-title" id="viewProductModalLabel" style="font-weight: 600;"></h5>
@@ -223,6 +223,26 @@ include('header.php');
                         <div class="mb-3">
                             <label class="text-muted mb-1"><i class="fas fa-mortar-pestle me-2"></i>Ingredients</label>
                             <div id="viewIngredients" class="p-3" style="background-color: #f8f9fa; border-radius: 8px; min-height: 60px;"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-muted mb-1"><i class="fas fa-users me-2"></i>Assigned Cashiers</label>
+                            <div id="viewCashiers" class="p-3" style="background-color: #f8f9fa; border-radius: 8px;">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Branch</th>
+                                                <th>Cashier Name</th>
+                                                <th>Shift Schedule</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="cashiersList">
+                                            <!-- Cashiers will be dynamically added here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -546,6 +566,49 @@ body {
     color: #6c757d;
     font-style: italic;
 }
+
+#viewCashiers .table {
+    font-size: 0.9em;
+}
+
+#viewCashiers .table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    padding: 0.5rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+#viewCashiers .table tbody td {
+    padding: 0.5rem;
+    vertical-align: middle;
+}
+
+#viewCashiers .badge-shift {
+    background-color: #4B7F52;
+    color: white;
+    font-size: 0.8em;
+    padding: 0.3em 0.6em;
+    border-radius: 12px;
+}
+
+#viewCashiers .badge-active {
+    background-color: #4B7F52;
+    color: white;
+}
+
+#viewCashiers .badge-inactive {
+    background-color: #dc3545;
+    color: white;
+}
+
+#viewCashiers:empty:before {
+    content: "No cashiers assigned to this product";
+    color: #6c757d;
+    font-style: italic;
+    display: block;
+    text-align: center;
+    padding: 1rem;
+}
 </style>
 
 <script>
@@ -581,7 +644,7 @@ $(document).ready(function() {
             {
                 data: null,
                 render: function(data) {
-                    return `
+                        return `
                         <div class="d-flex gap-1">
                             <button class="btn btn-view view-btn" data-id="${data.product_id}" title="View">
                                 <i class="fas fa-eye"></i>
@@ -740,11 +803,11 @@ $(document).ready(function() {
             confirmButtonText: 'Yes, delete it!'
         }).then((result) => {
             if (result.isConfirmed) {
-                $.ajax({
-                    url: 'delete_product.php',
-                    type: 'POST',
+            $.ajax({
+                url: 'delete_product.php',
+                type: 'POST',
                     data: { product_id: id },
-                    success: function(response) {
+                success: function(response) {
                         if (response.success) {
                             productTable.ajax.reload();
                             Swal.fire(
@@ -794,6 +857,38 @@ function viewProduct(id) {
             // Update image with fallback
             const imgPath = product.product_image || 'uploads/products/default.jpg';
             $('#viewProductImage').attr('src', imgPath);
+            
+            // Fetch and display assigned cashiers
+            $.get('get_product_cashiers.php', { product_id: id }, function(cashierResponse) {
+                const cashiersList = $('#cashiersList');
+                cashiersList.empty();
+                
+                if (cashierResponse.success && cashierResponse.data.length > 0) {
+                    cashierResponse.data.forEach(cashier => {
+                        const statusBadge = cashier.user_status === 'Active' 
+                            ? '<span class="badge badge-active">Active</span>'
+                            : '<span class="badge badge-inactive">Inactive</span>';
+                            
+                        const row = `
+                            <tr>
+                                <td>${cashier.branch_name}</td>
+                                <td>${cashier.user_name}</td>
+                                <td><span class="badge badge-shift">${cashier.shift_schedule}</span></td>
+                                <td>${statusBadge}</td>
+                            </tr>
+                        `;
+                        cashiersList.append(row);
+                    });
+                } else {
+                    cashiersList.append(`
+                        <tr>
+                            <td colspan="4" class="text-center text-muted fst-italic">
+                                No cashiers assigned to this product
+                            </td>
+                        </tr>
+                    `);
+                }
+            });
             
             // Show modal
             $('#viewProductModal').modal('show');

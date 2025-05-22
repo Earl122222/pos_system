@@ -42,7 +42,10 @@ try {
     // Check if service_type column exists
     $stmt = $pdo->query("SHOW COLUMNS FROM pos_order LIKE 'service_type'");
     if ($stmt->rowCount() == 0) {
-        $sql_statements[] = "ALTER TABLE pos_order ADD COLUMN service_type ENUM('dine-in', 'takeout', 'delivery') DEFAULT 'dine-in' AFTER payment_method";
+        $sql_statements[] = "ALTER TABLE pos_order ADD COLUMN service_type ENUM('dine-in', 'takeout', 'delivery', 'grab') DEFAULT 'dine-in' AFTER payment_method";
+    } else {
+        // Modify existing service_type column to include 'grab'
+        $sql_statements[] = "ALTER TABLE pos_order MODIFY COLUMN service_type ENUM('dine-in', 'takeout', 'delivery', 'grab') DEFAULT 'dine-in'";
     }
 
     // Check if order_status column exists

@@ -313,17 +313,29 @@ include('header.php');
                 </div>
                 
                 <div class="service-types">
-                    <div class="service-type active" onclick="setServiceType('dine-in')">
-                        <i class="fas fa-utensils"></i>
+                    <div class="service-type" onclick="setServiceType('dine-in')">
+                        <div class="service-icon">
+                            <i class="fas fa-utensils"></i>
+                        </div>
                         <span>Dine in</span>
                     </div>
                     <div class="service-type" onclick="setServiceType('takeout')">
-                        <i class="fas fa-shopping-bag"></i>
+                        <div class="service-icon">
+                            <i class="fas fa-shopping-bag"></i>
+                        </div>
                         <span>Takeout</span>
                     </div>
                     <div class="service-type" onclick="setServiceType('delivery')">
-                        <i class="fas fa-motorcycle"></i>
+                        <div class="service-icon">
+                            <i class="fas fa-motorcycle"></i>
+                        </div>
                         <span>Delivery</span>
+                    </div>
+                    <div class="service-type" onclick="setServiceType('grab')">
+                        <div class="service-icon">
+                            <i class="fas fa-motorcycle grab-icon"></i>
+                        </div>
+                        <span>Grab</span>
                     </div>
                 </div>
 
@@ -808,93 +820,133 @@ include('header.php');
 /* Enhanced Service Types */
 .service-types {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    padding: 15px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 16px;
     background: #f8f9fa;
+    border-radius: 12px;
+    margin-bottom: 20px;
 }
 
 .service-type {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 15px;
+    justify-content: center;
+    padding: 16px 8px;
     background: white;
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
-    border: 2px solid var(--light-red);
-    position: relative;
+    border: 2px solid transparent;
     overflow: hidden;
 }
 
-.service-type:before {
+.service-type::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(45deg, var(--primary-red), var(--primary-red-light));
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(139, 69, 67, 0.1), rgba(139, 69, 67, 0.05));
     opacity: 0;
     transition: opacity 0.3s ease;
-    z-index: 1;
+}
+
+.service-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 50%;
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
 }
 
 .service-type i {
-    font-size: 24px;
-    margin-bottom: 8px;
-    color: var(--primary-red);
+    font-size: 20px;
+    color: #8B4543;
     transition: all 0.3s ease;
-    position: relative;
-    z-index: 2;
 }
 
 .service-type span {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: #2c3e50;
     transition: all 0.3s ease;
-    position: relative;
-    z-index: 2;
+    text-align: center;
 }
 
 .service-type:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(231, 76, 60, 0.2);
-    border-color: var(--primary-red);
+    transform: translateY(-2px);
+    border-color: rgba(139, 69, 67, 0.3);
+    box-shadow: 0 4px 12px rgba(139, 69, 67, 0.1);
 }
 
-.service-type:hover:before {
-    opacity: 0.1;
+.service-type:hover::before {
+    opacity: 1;
+}
+
+.service-type:hover .service-icon {
+    background: #8B4543;
 }
 
 .service-type:hover i {
-    transform: scale(1.2);
-    color: var(--primary-red);
-}
-
-.service-type:hover span {
-    color: var(--primary-red);
+    color: white;
+    transform: scale(1.1);
 }
 
 .service-type.active {
-    border-color: var(--primary-red);
-    background: var(--light-red);
+    background: #8B4543;
+    border-color: #8B4543;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 69, 67, 0.2);
+}
+
+.service-type.active .service-icon {
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .service-type.active i {
-    transform: scale(1.2);
-    color: var(--primary-red);
+    color: white;
 }
 
 .service-type.active span {
-    color: var(--primary-red);
+    color: white;
 }
 
-.service-type:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.15);
+.grab-icon {
+    color: #00B14F !important;
+}
+
+.service-type:hover .grab-icon,
+.service-type.active .grab-icon {
+    color: white !important;
+}
+
+@media (max-width: 768px) {
+    .service-types {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        padding: 12px;
+    }
+    
+    .service-icon {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .service-type i {
+        font-size: 18px;
+    }
+    
+    .service-type span {
+        font-size: 13px;
+    }
 }
 
 /* Enhanced Payment Summary */
