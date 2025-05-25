@@ -188,6 +188,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         // Redirect to sales page or stored redirect URL
                         header('Location: ' . ($_SESSION['redirect_url'] ?? 'sales.php'));
                         unset($_SESSION['redirect_url']);
+                    } else if ($user['user_type'] === 'Stockman') {
+                        // Redirect stockman to their dashboard
+                        header('Location: stockman_dashboard.php');
                     } else {
                         header('Location: dashboard.php');
                     }

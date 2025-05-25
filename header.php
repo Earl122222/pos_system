@@ -18,7 +18,7 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         
         <!-- Font Awesome -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
         
         <!-- Inter Font -->
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -400,7 +400,7 @@
                         <span>MoreBites</span>
                     </a>
                     <button class="sidebar-toggle">
-                        <i class="fas fa-bars"></i>
+                        <i class="fa-solid fa-bars"></i>
                     </button>
                 </div>
                 <div class="sidebar-menu">
@@ -409,32 +409,32 @@
                             <?php if ($_SESSION['user_type'] === 'Cashier'): ?>
                                 <li class="menu-item">
                                     <a href="add_order.php" class="menu-link">
-                                        <i class="fas fa-cart-plus"></i>
+                                        <i class="fa-solid fa-cart-plus"></i>
                                         <span>Create Order</span>
                                     </a>
                                 </li>
                                 <li class="menu-item">
                                     <a href="sales.php" class="menu-link">
-                                        <i class="fas fa-cash-register"></i>
+                                        <i class="fa-solid fa-cash-register"></i>
                                         <span>Sales</span>
                                     </a>
                                 </li>
                                 <li class="menu-item">
                                     <a href="order_history.php" class="menu-link">
-                                        <i class="fas fa-history"></i>
+                                        <i class="fa-solid fa-history"></i>
                                         <span>Order History</span>
                                     </a>
                                 </li>
                                 <li class="menu-item">
                                     <a href="cashier_report.php" class="menu-link">
-                                        <i class="fas fa-chart-bar"></i>
+                                        <i class="fa-solid fa-chart-bar"></i>
                                         <span>My Performance</span>
                                     </a>
                                 </li>
                             <?php else: ?>
                                 <li class="menu-item">
                                     <a href="dashboard.php" class="menu-link">
-                                        <i class="fas fa-tachometer-alt"></i>
+                                        <i class="fa-solid fa-tachometer-alt"></i>
                                         <span>Dashboard</span>
                                     </a>
                                 </li>
@@ -442,59 +442,59 @@
                                     <?php if($_SESSION['user_type'] === 'Admin'): ?>
                                         <li class="menu-item">
                                             <a href="category.php" class="menu-link">
-                                                <i class="fas fa-th-list"></i>
+                                                <i class="fa-solid fa-th-list"></i>
                                                 <span>Category</span>
                                             </a>
                                         </li>
                                         <li class="menu-item">
                                             <div class="submenu-wrapper">
                                                 <a href="#" class="menu-link" onclick="toggleSubmenu(event, this)">
-                                                    <i class="fas fa-users"></i>
+                                                    <i class="fa-solid fa-users"></i>
                                                     <span>User</span>
-                                                    <i class="fas fa-chevron-down dropdown-indicator"></i>
+                                                    <i class="fa-solid fa-chevron-down dropdown-indicator"></i>
                                                 </a>
                                                 <ul class="submenu">
-                                                    <li><a href="user.php" class="submenu-link"><i class="fas fa-users-gear"></i>Manage Users</a></li>
-                                                    <li><a href="add_user.php?role=cashier" class="submenu-link"><i class="fas fa-cash-register"></i>Add Cashier</a></li>
-                                                    <li><a href="add_user.php?role=stockman" class="submenu-link"><i class="fas fa-boxes"></i>Add Stockman</a></li>
+                                                    <li><a href="user.php" class="submenu-link"><i class="fa-solid fa-users-gear"></i>Manage Users</a></li>
+                                                    <li><a href="add_user.php?role=cashier" class="submenu-link"><i class="fa-solid fa-cash-register"></i>Add Cashier</a></li>
+                                                    <li><a href="add_user.php?role=stockman" class="submenu-link"><i class="fa-solid fa-boxes"></i>Add Stockman</a></li>
                                                 </ul>
                                             </div>
                                         </li>
                                         <li class="menu-item">
                                             <a href="ingredients.php" class="menu-link">
-                                                <i class="fas fa-mortar-pestle"></i>
+                                                <i class="fa-solid fa-mortar-pestle"></i>
                                                 <span>Ingredients</span>
                                             </a>
                                         </li>
                                         <li class="menu-item">
                                             <a href="ingredient_requests.php" class="menu-link">
-                                                <i class="fas fa-clipboard-list"></i>
+                                                <i class="fa-solid fa-clipboard-list"></i>
                                                 <span>List of Request</span>
                                             </a>
                                         </li>
                                         <li class="menu-item">
                                             <a href="product.php" class="menu-link">
-                                                <i class="fas fa-utensils"></i>
+                                                <i class="fa-solid fa-utensils"></i>
                                                 <span>Product</span>
                                             </a>
                                         </li>
                                         <li class="menu-item">
                                             <div class="submenu-wrapper">
                                                 <a href="#" class="menu-link" onclick="toggleSubmenu(event, this)">
-                                                    <i class="fas fa-store"></i>
+                                                    <i class="fa-solid fa-store"></i>
                                                     <span>Branch</span>
-                                                    <i class="fas fa-chevron-down dropdown-indicator"></i>
+                                                    <i class="fa-solid fa-chevron-down dropdown-indicator"></i>
                                                 </a>
                                                 <ul class="submenu">
-                                                    <li><a href="add_branch.php" class="submenu-link"><i class="fas fa-plus"></i>Add Branch</a></li>
-                                                    <li><a href="branch_details.php" class="submenu-link"><i class="fas fa-info-circle"></i>Branch Details</a></li>
-                                                    <li><a href="branch_overview.php" class="submenu-link"><i class="fas fa-chart-bar"></i>Branch Overview</a></li>
+                                                    <li><a href="add_branch.php" class="submenu-link"><i class="fa-solid fa-plus"></i>Add Branch</a></li>
+                                                    <li><a href="branch_details.php" class="submenu-link"><i class="fa-solid fa-info-circle"></i>Branch Details</a></li>
+                                                    <li><a href="branch_overview.php" class="submenu-link"><i class="fa-solid fa-chart-bar"></i>Branch Overview</a></li>
                                                 </ul>
                                             </div>
                                         </li>
                                         <li class="menu-item">
                                             <a href="branch_sales.php?branch=main" class="menu-link">
-                                                <i class="fas fa-chart-line"></i>
+                                                <i class="fa-solid fa-chart-line"></i>
                                                 <span>Sales</span>
                                             </a>
                                         </li>
@@ -503,19 +503,19 @@
                                     <?php if($_SESSION['user_type'] === 'Cashier'): ?>
                                         <li class="menu-item">
                                             <a href="add_order.php" class="menu-link">
-                                                <i class="fas fa-cart-plus"></i>
+                                                <i class="fa-solid fa-cart-plus"></i>
                                                 <span>Create Order</span>
                                             </a>
                                         </li>
                                         <li class="menu-item">
                                             <a href="order.php" class="menu-link">
-                                                <i class="fas fa-history"></i>
+                                                <i class="fa-solid fa-history"></i>
                                                 <span>Order History</span>
                                             </a>
                                         </li>
                                         <li class="menu-item">
                                             <a href="cashier_report.php" class="menu-link">
-                                                <i class="fas fa-chart-line"></i>
+                                                <i class="fa-solid fa-chart-line"></i>
                                                 <span>My Performance</span>
                                             </a>
                                         </li>
@@ -539,36 +539,36 @@
                             <span id="current-time"></span>
                         </div>
                         <button class="header-action-btn">
-                            <i class="fas fa-bell"></i>
+                            <i class="fa-solid fa-bell"></i>
                             <span class="badge bg-danger">3</span>
                         </button>
                         <button class="header-action-btn">
-                            <i class="fas fa-envelope"></i>
+                            <i class="fa-solid fa-envelope"></i>
                             <span class="badge bg-danger">5</span>
                         </button>
                         <div class="dropdown">
                             <button class="user-menu" type="button" aria-expanded="false">
-                                <i class="fas fa-user"></i>
+                                <i class="fa-solid fa-user"></i>
                                 <span><?php echo isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'User'; ?></span>
-                                <i class="fas fa-chevron-down ms-2"></i>
+                                <i class="fa-solid fa-chevron-down ms-2"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow">
                                 <li>
                                     <a class="dropdown-item" href="user_profile.php">
-                                        <i class="fas fa-user-circle"></i>
+                                        <i class="fa-solid fa-user-circle"></i>
                                         <span>Profile</span>
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" href="change_password.php">
-                                        <i class="fas fa-key"></i>
+                                        <i class="fa-solid fa-key"></i>
                                         <span>Change Password</span>
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item text-danger" href="logout.php">
-                                        <i class="fas fa-sign-out-alt"></i>
+                                        <i class="fa-solid fa-sign-out-alt"></i>
                                         <span>Logout</span>
                                     </a>
                                 </li>
