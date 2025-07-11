@@ -433,12 +433,20 @@
                                 </li>
                             <?php else: ?>
                                 <li class="menu-item">
-                                    <a href="dashboard.php" class="menu-link">
+                                    <a href="<?php echo ($_SESSION['user_type'] === 'Stockman') ? 'stockman_dashboard.php' : 'dashboard.php'; ?>" class="menu-link">
                                         <i class="fa-solid fa-tachometer-alt"></i>
                                         <span>Dashboard</span>
                                     </a>
                                 </li>
                                 <?php if(isset($_SESSION['user_type'])): ?>
+                                    <?php if($_SESSION['user_type'] === 'Stockman'): ?>
+                                        <li class="menu-item">
+                                            <a href="request_stock.php" class="menu-link">
+                                                <i class="fa-solid fa-paper-plane"></i>
+                                                <span>Request Stock</span>
+                                            </a>
+                                        </li>
+                                    <?php endif; ?>
                                     <?php if($_SESSION['user_type'] === 'Admin'): ?>
                                         <li class="menu-item">
                                             <a href="category.php" class="menu-link">

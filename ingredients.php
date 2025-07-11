@@ -293,7 +293,7 @@ h1 {
                     <table id="ingredientTable" class="table table-bordered table-hover">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <!--<th>ID</th>-->
                                 <th>Category</th>
                                 <th>Ingredient Name</th>
                                 <th>Quantity</th>
@@ -308,7 +308,21 @@ h1 {
     </div>
 </div>
 
+<!-- Edit Ingredient Modal -->
+<div class="modal fade" id="editIngredientModal" tabindex="-1" aria-labelledby="editIngredientModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-body" id="editIngredientModalBody">
+        <!-- AJAX-loaded content here -->
+      </div>
+    </div>
+  </div>
+</div>
+
 <?php include('footer.php'); ?>
+
+<!-- Add SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 $(document).ready(function() {
@@ -320,7 +334,7 @@ $(document).ready(function() {
             "type": "GET"
         },
         "columns": [
-            { "data": "ingredient_id" },
+            //{ "data": "ingredient_id" },
             { "data": "category_name" },
             { "data": "ingredient_name" },
             { "data": "ingredient_quantity" },
@@ -330,7 +344,7 @@ $(document).ready(function() {
                 "render": function(data, type, row) {
                     return `
                         <div class="text-center">
-                            <a href="edit_ingredient.php?id=${row.ingredient_id}" class="btn btn-warning btn-sm">Edit</a>
+                            <a href="#" class="btn btn-warning btn-sm edit-ingredient-btn" data-id="${row.ingredient_id}">Edit</a>
                             <button class="btn btn-danger btn-sm delete-btn" data-id="${row.ingredient_id}">Delete</button>
                         </div>`;
                 }
@@ -341,16 +355,82 @@ $(document).ready(function() {
     // Handle Delete Button Click
     $(document).on('click', '.delete-btn', function() {
         let ingredientId = $(this).data('id');
-        if (confirm("Are you sure you want to delete this ingredient?")) {
-            $.ajax({
-                url: 'delete_ingredient.php',
-                type: 'POST',
-                data: { id: ingredientId },
-                success: function(response) {
-                    alert(response);
-                    $('#ingredientTable').DataTable().ajax.reload();
-                }
-            });
+        Swal.fire({
+            icon: 'warning',
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            showCancelButton: true,
+            confirmButtonColor: '#B33A3A',
+            cancelButtonColor: '#8B4543',
+            confirmButtonText: '<i class="fas fa-trash"></i> Yes, delete it!',
+            cancelButtonText: 'Cancel',
+            customClass: {popup: 'rounded-4'}
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: 'delete_ingredient.php',
+                    type: 'POST',
+                    data: { id: ingredientId },
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Deleted!',
+                            text: 'Ingredient has been deleted successfully.',
+                            confirmButtonColor: '#8B4543',
+                            customClass: {popup: 'rounded-4'}
+                        });
+                        $('#ingredientTable').DataTable().ajax.reload();
+                    }
+                });
+            }
+        });
+    });
+});
+
+$(document).on('click', '.edit-ingredient-btn', function(e) {
+    e.preventDefault();
+    var ingredientId = $(this).data('id');
+    $('#editIngredientModalBody').html('<div class="text-center p-4">Loading...</div>');
+    $('#editIngredientModal').modal('show');
+    $.get('edit_ingredient.php', { id: ingredientId, modal: 1 }, function(data) {
+        $('#editIngredientModalBody').html(data);
+    });
+});
+
+$(document).on('submit', '#editIngredientModalBody form', function(e) {
+    e.preventDefault();
+    var form = $(this);
+    var formData = form.serialize();
+    $.post(form.attr('action'), formData, function(response) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Saved!',
+            text: 'Ingredient has been updated successfully.',
+            confirmButtonColor: '#8B4543',
+            customClass: {popup: 'rounded-4'}
+        }).then(() => {
+            $('#editIngredientModal').modal('hide');
+            $('#ingredientTable').DataTable().ajax.reload();
+        });
+    });
+});
+// Intercept Cancel button
+$(document).on('click', '#editIngredientModalBody .btn-cancel', function(e) {
+    e.preventDefault();
+    Swal.fire({
+        icon: 'warning',
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        showCancelButton: true,
+        confirmButtonColor: '#B33A3A',
+        cancelButtonColor: '#8B4543',
+        confirmButtonText: 'Yes, cancel!',
+        cancelButtonText: 'No, keep editing',
+        customClass: {popup: 'rounded-4'}
+    }).then((result) => {
+        if (result.dismiss === Swal.DismissReason.cancel) {
+            // Re-open the edit modal or form here
+            $('#editIngredientModal').modal('show');
         }
     });
 });

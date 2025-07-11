@@ -3,6 +3,12 @@
 require_once 'db_connect.php';
 require_once 'auth_function.php';
 
+requireLogin();
+if ($_SESSION['user_type'] !== 'Admin') {
+    echo "Access denied. Only Admin can access this page.";
+    exit();
+}
+
 checkAdminLogin();
 
 $categorySql = "SELECT COUNT(*) FROM pos_category WHERE status = 'active'";
@@ -2168,6 +2174,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 1500);
         });
     });
+});
+
+$('#yourTableId').DataTable({
+    "ajax": "get_ingredient_requests.php",
+    // ...
 });
 </script>
 

@@ -14,7 +14,7 @@ try {
     // Base query
     $query = "SELECT r.*, b.branch_name 
               FROM ingredient_requests r 
-              LEFT JOIN branches b ON r.branch_id = b.branch_id 
+              LEFT JOIN pos_branch b ON r.branch_id = b.branch_id 
               WHERE 1=1";
     
     // Apply filters

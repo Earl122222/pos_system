@@ -11,12 +11,11 @@ $columns = [
     5 => null
 ];
 
-$limit = $_GET['length'];
-$start = $_GET['start'];
-$order = $columns[$_GET['order'][0]['column']];
-$dir = $_GET['order'][0]['dir'];
-
-$searchValue = $_GET['search']['value'];
+$length = isset($_GET['length']) ? intval($_GET['length']) : 10;
+$start = isset($_GET['start']) ? intval($_GET['start']) : 0;
+$order = isset($_GET['order'][0]['column']) ? $columns[$_GET['order'][0]['column']] : 'user_id';
+$dir = isset($_GET['order'][0]['dir']) ? $_GET['order'][0]['dir'] : 'ASC';
+$searchValue = isset($_GET['search']['value']) ? $_GET['search']['value'] : '';
 
 // Get total records
 $totalRecordsStmt = $pdo->query("SELECT COUNT(*) FROM pos_user");
@@ -35,12 +34,12 @@ $dataQuery = "SELECT * FROM pos_user WHERE 1=1";
 if (!empty($searchValue)) {
     $dataQuery .= " AND (user_name LIKE '%$searchValue%' OR user_email LIKE '%$searchValue%' OR user_type LIKE '%$searchValue%' OR user_status LIKE '%$searchValue%')";
 }
-$dataQuery .= " ORDER BY $order $dir LIMIT $start, $limit";
+$dataQuery .= " ORDER BY user_id ASC LIMIT $start, $length";
 $dataStmt = $pdo->query($dataQuery);
 $data = $dataStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $response = [
-    "draw"              => intval($_GET['draw']),
+    "draw"              => isset($_GET['draw']) ? intval($_GET['draw']) : 1,
     "recordsTotal"      => intval($totalRecords),
     "recordsFiltered"   => intval($totalFilteredRecords),
     "data"              => $data

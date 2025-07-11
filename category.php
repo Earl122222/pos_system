@@ -485,11 +485,10 @@ h1 {
                     <table id="categoryTable" class="table table-bordered table-hover">
             <thead>
                 <tr>
-                                <th width="5%">ID</th>
-                                <th width="20%">Name</th>
-                                <th width="45%">Description</th>
-                                <th width="15%">Status</th>
-                                <th width="15%">Action</th>
+                    <th>Category Name</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Action</th>
                 </tr>
             </thead>
         </table>
@@ -601,7 +600,6 @@ $(document).ready(function() {
             "type": "GET"
         },
         "columns": [
-            { "data": "category_id" },
             { "data": "category_name" },
             { 
                 "data": "description",

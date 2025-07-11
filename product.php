@@ -39,15 +39,14 @@ include('header.php');
                 <table id="productTable" class="table table-hover mb-0">
             <thead>
                 <tr>
-                            <th style="color: #8B4543;">ID</th>
-                            <th style="color: #8B4543;">CATEGORY</th>
-                            <th style="color: #8B4543;">PRODUCT NAME</th>
-                            <th style="color: #8B4543;">PRICE</th>
-                            <th style="color: #8B4543;">DESCRIPTION</th>
-                            <th style="color: #8B4543;">INGREDIENTS</th>
-                            <th style="color: #8B4543;">STATUS</th>
-                            <th style="color: #8B4543;">IMAGE</th>
-                            <th style="color: #8B4543;">ACTION</th>
+                    <th style="color: #8B4543;">CATEGORY</th>
+                    <th style="color: #8B4543;">PRODUCT NAME</th>
+                    <th style="color: #8B4543;">PRICE</th>
+                    <th style="color: #8B4543;">DESCRIPTION</th>
+                    <th style="color: #8B4543;">INGREDIENTS</th>
+                    <th style="color: #8B4543;">STATUS</th>
+                    <th style="color: #8B4543;">IMAGE</th>
+                    <th style="color: #8B4543;">ACTION</th>
                 </tr>
             </thead>
             <tbody>
@@ -618,7 +617,6 @@ $(document).ready(function() {
         processing: true,
         serverSide: true,
         columns: [
-            { data: 'product_id' },
             { data: 'category_name' },
             { data: 'product_name' },
             { 

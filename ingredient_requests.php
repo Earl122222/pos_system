@@ -388,7 +388,6 @@ h1 {
                         <table id="requestsTable" class="table table-bordered table-hover">
                             <thead>
                                 <tr>
-                                    <th>Request ID</th>
                                     <th>Branch</th>
                                     <th>Date Requested</th>
                                     <th>Ingredients</th>
@@ -457,7 +456,6 @@ $(document).ready(function() {
             }
         },
         columns: [
-            { data: 'request_id' },
             { data: 'branch_name' },
             { 
                 data: 'request_date',

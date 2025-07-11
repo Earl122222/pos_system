@@ -334,20 +334,17 @@ h1 {
                         <i class="fas fa-users me-1"></i>
                         User List
                     </div>
-                    <a href="add_user.php" class="btn btn-success">
-                        <i class="fas fa-user-plus me-1"></i> Add User
-                    </a>
+                    <!-- Removed Add User button -->
                 </div>
                 <div class="card-body">
                     <table id="userTable" class="table table-bordered table-hover">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Type</th>
-                                <th>Status</th>
-                                <th>Action</th>
+                                <th>NAME</th>
+                                <th>EMAIL</th>
+                                <th>TYPE</th>
+                                <th>STATUS</th>
+                                <th>ACTION</th>
                             </tr>
                         </thead>
                     </table>
@@ -415,12 +412,14 @@ $(document).ready(function() {
     $('#userTable').DataTable({
         "processing": true,
         "serverSide": true,
+        "pageLength": 5,
+        "lengthChange": false,
+        "dom": 'ftip',
         "ajax": {
             "url": "user_ajax.php",
             "type": "GET"
         },
         "columns": [
-            { "data": "user_id" },
             { "data": "user_name" },
             { "data": "user_email" },
             { "data": "user_type" },

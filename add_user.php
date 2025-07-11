@@ -7,12 +7,9 @@ checkAdminLogin();
 
 $role = isset($_GET['role']) ? $_GET['role'] : '';
 
-// Get active branches for cashier assignment
-$branches = [];
-if ($role === 'cashier') {
-    $stmt = $pdo->query("SELECT branch_id, branch_name, branch_code FROM pos_branch WHERE status = 'Active'");
-    $branches = $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
+// Always fetch active branches for the dropdown
+$stmt = $pdo->query("SELECT branch_id, branch_name, branch_code FROM pos_branch WHERE status = 'Active'");
+$branches = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 include('header.php');
 ?>
@@ -68,7 +65,7 @@ include('header.php');
                                 </div>
                             </div>
 
-                            <?php if ($role === 'cashier'): ?>
+                            <?php if ($role === 'cashier' || $role === 'stockman'): ?>
                             <div class="col-md-6">
                                 <h5 class="mb-4">Work Information</h5>
 

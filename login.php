@@ -154,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     // Clear CAPTCHA session after successful login
                     unset($_SESSION['captcha_code']);
                     
-                    // If user is a cashier, create a session
+                    // Redirect based on user type
                     if ($user['user_type'] === 'Cashier') {
                         // Get cashier's branch
                         $stmt = $pdo->prepare("
@@ -189,10 +189,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         header('Location: ' . ($_SESSION['redirect_url'] ?? 'sales.php'));
                         unset($_SESSION['redirect_url']);
                     } else if ($user['user_type'] === 'Stockman') {
-                        // Redirect stockman to their dashboard
                         header('Location: stockman_dashboard.php');
-                    } else {
+                    } else if ($user['user_type'] === 'Admin') {
                         header('Location: dashboard.php');
+                    } else {
+                        // Fallback for unknown roles
+                        header('Location: login.php');
                     }
                     exit();
                 } else {
