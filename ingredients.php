@@ -7,6 +7,9 @@ checkAdminLogin();
 
 $confData = getConfigData($pdo);
 
+// Fetch categories for the dropdown
+$categories = $pdo->query("SELECT category_id, category_name FROM pos_category")->fetchAll(PDO::FETCH_ASSOC);
+
 include('header.php');
 ?>
 
@@ -285,9 +288,9 @@ h1 {
                         <i class="fas fa-mortar-pestle me-1"></i>
                         Ingredient List
                     </div>
-                    <a href="add_ingredient.php" class="btn btn-success">
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addIngredientModal">
                         <i class="fas fa-plus me-1"></i> Add Ingredient
-                    </a>
+                    </button>
                 </div>
                 <div class="card-body">
                     <table id="ingredientTable" class="table table-bordered table-hover">
@@ -306,6 +309,55 @@ h1 {
             </div>
         </div>
     </div>
+</div>
+
+<!-- Add Ingredient Modal -->
+<div class="modal fade" id="addIngredientModal" tabindex="-1" aria-labelledby="addIngredientModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background: #8B4543; color: #fff;">
+        <h5 class="modal-title" id="addIngredientModalLabel"><i class="fas fa-plus me-2"></i> Add Ingredient</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="addIngredientError" class="alert alert-danger d-none"></div>
+        <form id="addIngredientForm">
+          <div class="mb-3">
+            <label for="add_category_id" class="form-label">Category</label>
+            <select name="category_id" id="add_category_id" class="form-select" required>
+              <option value="">Select Category</option>
+              <?php foreach ($categories as $category): ?>
+                <option value="<?php echo htmlspecialchars($category['category_id']); ?>"><?php echo htmlspecialchars($category['category_name']); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="add_ingredient_name" class="form-label">Ingredient Name</label>
+            <input type="text" name="ingredient_name" id="add_ingredient_name" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="add_ingredient_quantity" class="form-label">Quantity</label>
+            <input type="number" name="ingredient_quantity" id="add_ingredient_quantity" class="form-control" step="0.01" required>
+          </div>
+          <div class="mb-3">
+            <label for="add_ingredient_unit" class="form-label">Unit</label>
+            <input type="text" name="ingredient_unit" id="add_ingredient_unit" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="add_ingredient_status" class="form-label">Status</label>
+            <select name="ingredient_status" id="add_ingredient_status" class="form-select" required>
+              <option value="Available">Available</option>
+              <option value="Out of Stock">Out of Stock</option>
+            </select>
+          </div>
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save Ingredient</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Edit Ingredient Modal -->
@@ -339,6 +391,28 @@ $(document).ready(function() {
             { "data": "ingredient_name" },
             { "data": "ingredient_quantity" },
             { "data": "ingredient_unit" },
+            {
+                // Status column with color badge
+                "data": null,
+                "render": function(data, type, row) {
+                    // Assume minimum_threshold is available in row, otherwise set a default
+                    const min = row.minimum_threshold !== undefined ? parseFloat(row.minimum_threshold) : 1;
+                    const qty = parseFloat(row.ingredient_quantity);
+                    let status = '';
+                    let badgeClass = '';
+                    if (qty === 0) {
+                        status = 'Out of Stock';
+                        badgeClass = 'bg-danger';
+                    } else if (qty <= min) {
+                        status = 'Low Stock';
+                        badgeClass = 'bg-warning';
+                    } else {
+                        status = 'Adequate';
+                        badgeClass = 'bg-success';
+                    }
+                    return `<span class="badge ${badgeClass}">${status}</span>`;
+                }
+            },
             {
                 "data": null,
                 "render": function(data, type, row) {
@@ -382,6 +456,43 @@ $(document).ready(function() {
                         $('#ingredientTable').DataTable().ajax.reload();
                     }
                 });
+            }
+        });
+    });
+
+    // Add Ingredient AJAX
+    $('#addIngredientForm').on('submit', function(e) {
+        e.preventDefault();
+        var form = $(this);
+        var modal = $('#addIngredientModal');
+        var errorBox = $('#addIngredientError');
+        errorBox.addClass('d-none').html('');
+        var formData = form.serialize();
+        $.ajax({
+            url: 'add_ingredient.php',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    modal.modal('hide');
+                    form[0].reset();
+                    $('#ingredientTable').DataTable().ajax.reload();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'Ingredient added successfully!',
+                        confirmButtonColor: '#8B4543',
+                        customClass: {popup: 'rounded-4'}
+                    });
+                } else if (response.errors) {
+                    errorBox.removeClass('d-none').html(response.errors.join('<br>'));
+                } else {
+                    errorBox.removeClass('d-none').html('An error occurred.');
+                }
+            },
+            error: function(xhr) {
+                errorBox.removeClass('d-none').html('An error occurred.');
             }
         });
     });

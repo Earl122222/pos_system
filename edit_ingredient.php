@@ -3,7 +3,22 @@
 require_once 'db_connect.php';
 require_once 'auth_function.php';
 
-checkAdminLogin();
+// Replace checkAdminLogin() with the following:
+require_once 'auth_function.php';
+if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true || !in_array($_SESSION['user_type'], ['Admin', 'Stockman'])) {
+    // For AJAX: return JSON error
+    if (
+        isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+        strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
+    ) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'Access denied.']);
+        exit;
+    }
+    // For normal form: redirect
+    header('Location: login.php');
+    exit;
+}
 
 // Fetch categories for the dropdown
 $categories = $pdo->query("SELECT category_id, category_name FROM pos_category")->fetchAll(PDO::FETCH_ASSOC);
@@ -15,7 +30,9 @@ $category_id = '';
 $ingredient_name = '';
 $ingredient_quantity = 0; // Ensure it's numeric
 $ingredient_unit = '';
-$ingredient_status = 'Available';
+$date_added = '';
+$expiring_date = null;
+$minimum_threshold = 0;
 
 if ($ingredient_id) {
     $stmt = $pdo->prepare("SELECT * FROM ingredients WHERE ingredient_id = :ingredient_id");
@@ -27,20 +44,23 @@ if ($ingredient_id) {
         $ingredient_name = $ingredient['ingredient_name'];
         $ingredient_quantity = (float) $ingredient['ingredient_quantity']; // Convert to float
         $ingredient_unit = $ingredient['ingredient_unit'];
-        $ingredient_status = $ingredient['ingredient_status'];
+        $date_added = $ingredient['date_added'];
+        $expiring_date = $ingredient['expiring_date'];
+        $minimum_threshold = (float) $ingredient['minimum_threshold'];
     } else {
         $message = 'Ingredient not found.';
     }
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-
-    $category_id = $_POST['category_id'];
-    $ingredient_name = trim($_POST['ingredient_name']);
-    $ingredient_unit = trim($_POST['ingredient_unit']);
-    $ingredient_status = $_POST['ingredient_status'];
-    $action = $_POST['action'] ?? ''; // Determine restock or deduct action
-    $change_quantity = (float) $_POST['change_quantity']; // Convert to float
+    $ingredient_id = $_POST['ingredient_id'] ?? $ingredient_id;
+    $category_id = $_POST['category_id'] ?? '';
+    $ingredient_name = trim($_POST['ingredient_name'] ?? '');
+    $ingredient_quantity = trim($_POST['ingredient_quantity'] ?? '');
+    $ingredient_unit = trim($_POST['ingredient_unit'] ?? '');
+    $date_added = $_POST['date_added'] ?? date('Y-m-d');
+    $expiring_date = $_POST['expiring_date'] ?? null;
+    $minimum_threshold = trim($_POST['minimum_threshold'] ?? 0);
 
     // Validate fields
     if (empty($category_id)) {
@@ -49,35 +69,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (empty($ingredient_name)) {
         $errors[] = 'Ingredient Name is required.';
     }
+    if ($ingredient_quantity === '' || !is_numeric($ingredient_quantity)) {
+        $errors[] = 'Valid Ingredient Quantity is required.';
+    }
     if (empty($ingredient_unit)) {
         $errors[] = 'Unit of Measurement is required.';
     }
-    if ($change_quantity < 0) {
-        $errors[] = 'Quantity cannot be negative.';
-    }
-
-    // Adjust quantity based on restock or deduct action
-    if ($action === "restock") {
-        $ingredient_quantity += $change_quantity;
-    } elseif ($action === "deduct") {
-        if ($ingredient_quantity >= $change_quantity) {
-            $ingredient_quantity -= $change_quantity;
-        } else {
-            $errors[] = 'Cannot deduct more than available quantity.';
-        }
+    if ($minimum_threshold === '' || !is_numeric($minimum_threshold) || $minimum_threshold < 0) {
+        $errors[] = 'Minimum Threshold is required and must be 0 or greater.';
     }
 
     if (empty($errors)) {
-        $stmt = $pdo->prepare("UPDATE ingredients SET category_id = ?, ingredient_name = ?, ingredient_quantity = ?, ingredient_unit = ?, ingredient_status = ? WHERE ingredient_id = ?");
-        $stmt->execute([$category_id, $ingredient_name, $ingredient_quantity, $ingredient_unit, $ingredient_status, $ingredient_id]);
-        header("Location: ingredients.php");
-        exit;
-    } else {
-        $message = '<ul class="list-unstyled">';
-        foreach ($errors as $error) {
-            $message .= '<li>' . $error . '</li>';
+        $stmt = $pdo->prepare("UPDATE ingredients SET category_id = ?, ingredient_name = ?, ingredient_quantity = ?, ingredient_unit = ?, date_added = ?, expiring_date = ?, minimum_threshold = ? WHERE ingredient_id = ?");
+        $stmt->execute([$category_id, $ingredient_name, $ingredient_quantity, $ingredient_unit, $date_added, $expiring_date, $minimum_threshold, $ingredient_id]);
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            echo json_encode(['success' => true]);
+            exit;
+        } else {
+            header("Location: ingredients.php");
+            exit;
         }
-        $message .= '</ul>';
+    } else {
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            echo json_encode(['success' => false, 'errors' => $errors]);
+            exit;
+        } else {
+            $message = '<ul class="list-unstyled">';
+            foreach ($errors as $error) {
+                $message .= '<li>' . $error . '</li>';
+            }
+            $message .= '</ul>';
+        }
     }
 }
 
@@ -258,23 +280,24 @@ if ($modal) {
             <input type="text" name="ingredient_name" id="ingredient_name" class="ingredient-form-input" value="<?php echo htmlspecialchars($ingredient_name); ?>">
         </div>
         <div class="ingredient-form-group">
-            <label class="ingredient-form-label">Current Quantity</label>
-            <input type="text" class="ingredient-form-input" value="<?php echo htmlspecialchars($ingredient_quantity); ?>" readonly>
-        </div>
-        <div class="ingredient-form-group">
-            <label for="change_quantity" class="ingredient-form-label">Change Quantity</label>
-            <input type="number" name="change_quantity" id="change_quantity" class="ingredient-form-input" step="0.01">
+            <label for="ingredient_quantity" class="ingredient-form-label">Quantity</label>
+            <input type="number" name="ingredient_quantity" id="ingredient_quantity" class="ingredient-form-input" value="<?php echo htmlspecialchars($ingredient_quantity); ?>">
         </div>
         <div class="ingredient-form-group">
             <label for="ingredient_unit" class="ingredient-form-label">Unit</label>
             <input type="text" name="ingredient_unit" id="ingredient_unit" class="ingredient-form-input" value="<?php echo htmlspecialchars($ingredient_unit); ?>">
         </div>
         <div class="ingredient-form-group">
-            <label for="ingredient_status" class="ingredient-form-label">Status</label>
-            <select name="ingredient_status" id="ingredient_status" class="ingredient-form-select">
-                <option value="Available" <?php if ($ingredient_status == 'Available') echo 'selected'; ?>>Available</option>
-                <option value="Out of Stock" <?php if ($ingredient_status == 'Out of Stock') echo 'selected'; ?>>Out of Stock</option>
-            </select>
+            <label for="date_added" class="ingredient-form-label">Date Added</label>
+            <input type="date" name="date_added" id="date_added" class="ingredient-form-input" value="<?php echo htmlspecialchars($date_added); ?>">
+        </div>
+        <div class="ingredient-form-group">
+            <label for="expiring_date" class="ingredient-form-label">Expiring Date</label>
+            <input type="date" name="expiring_date" id="expiring_date" class="ingredient-form-input" value="<?php echo htmlspecialchars($expiring_date ? $expiring_date : ''); ?>">
+        </div>
+        <div class="ingredient-form-group">
+            <label for="minimum_threshold" class="ingredient-form-label">Minimum Threshold</label>
+            <input type="number" name="minimum_threshold" id="minimum_threshold" class="ingredient-form-input" value="<?php echo htmlspecialchars($minimum_threshold); ?>">
         </div>
         <div class="ingredient-modal-actions">
             <button type="button" class="btn-cancel" data-bs-dismiss="modal">&#10005; Cancel</button>
@@ -330,15 +353,9 @@ if ($message !== '') {
                     </div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-5 fw-bold">Current Quantity:</div>
+                    <div class="col-5 fw-bold">Quantity:</div>
                     <div class="col-7">
-                        <input type="text" class="form-control" value="<?php echo htmlspecialchars($ingredient_quantity); ?>" readonly>
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-5 fw-bold">Change Quantity:</div>
-                    <div class="col-7">
-                        <input type="number" name="change_quantity" id="change_quantity" class="form-control" step="0.01">
+                        <input type="number" name="ingredient_quantity" id="ingredient_quantity" class="form-control" value="<?php echo htmlspecialchars($ingredient_quantity); ?>">
                     </div>
                 </div>
                 <div class="row mb-3">
@@ -348,18 +365,25 @@ if ($message !== '') {
                     </div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-5 fw-bold">Status:</div>
+                    <div class="col-5 fw-bold">Date Added:</div>
                     <div class="col-7">
-                        <select name="ingredient_status" id="ingredient_status" class="form-select">
-                            <option value="Available" <?php if ($ingredient_status == 'Available') echo 'selected'; ?>>Available</option>
-                            <option value="Out of Stock" <?php if ($ingredient_status == 'Out of Stock') echo 'selected'; ?>>Out of Stock</option>
-                        </select>
+                        <input type="date" name="date_added" id="date_added" class="form-control" value="<?php echo htmlspecialchars($date_added); ?>">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-5 fw-bold">Expiring Date:</div>
+                    <div class="col-7">
+                        <input type="date" name="expiring_date" id="expiring_date" class="form-control" value="<?php echo htmlspecialchars($expiring_date ? $expiring_date : ''); ?>">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-5 fw-bold">Minimum Threshold:</div>
+                    <div class="col-7">
+                        <input type="number" name="minimum_threshold" id="minimum_threshold" class="form-control" value="<?php echo htmlspecialchars($minimum_threshold); ?>">
                     </div>
                 </div>
                 <div class="modal-footer">
                     <input type="hidden" name="ingredient_id" value="<?php echo htmlspecialchars($ingredient_id); ?>">
-                    <button type="submit" name="action" value="restock" class="btn btn-success">Restock</button>
-                    <button type="submit" name="action" value="deduct" class="btn btn-danger">Deduct</button>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
                     <a href="ingredients.php" class="btn btn-secondary">Close</a>
                 </div>

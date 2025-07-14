@@ -55,6 +55,10 @@ try {
     ");
     $stock_status = $stmt->fetch(PDO::FETCH_ASSOC);
 
+    // Get total ingredients count
+    $stmt = $pdo->query("SELECT COUNT(*) FROM ingredients");
+    $total_ingredients = $stmt->fetchColumn();
+
     echo json_encode([
         'success' => true,
         'total_items' => $total_items,
@@ -63,7 +67,8 @@ try {
         'expiring_items' => $expiring_items,
         'adequate_stock' => (int)$stock_status['adequate_stock'],
         'low_stock' => (int)$stock_status['low_stock'],
-        'out_of_stock' => (int)$stock_status['out_of_stock']
+        'out_of_stock' => (int)$stock_status['out_of_stock'],
+        'total_ingredients' => (int)$total_ingredients
     ]);
 
 } catch (PDOException $e) {

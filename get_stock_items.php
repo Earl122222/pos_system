@@ -54,9 +54,8 @@ try {
     ]);
 
 } catch (PDOException $e) {
-    error_log('Error in get_stock_items.php: ' . $e->getMessage());
     echo json_encode([
         'success' => false,
-        'error' => 'Database error occurred'
+        'error' => $e->getMessage() // Show the real error!
     ]);
 } 
